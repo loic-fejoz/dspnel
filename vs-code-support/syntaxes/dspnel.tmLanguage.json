@@ -1,0 +1,194 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "DSPnel",
+	"patterns": [
+		{
+			"include": "#comments-inline"
+		},
+		{
+			"include": "#kernels"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#modifiers"
+		},
+		{
+			"include": "#vars"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#operators"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#types"
+		}
+	],
+	"repository": {
+		"kernels": {
+			"patterns": [{
+				"match": "\\b(kernel)\\s+([_$]*[a-zA-Z0-9_$]+)\\(",
+				"captures": {
+					"2": {
+						"name": "entity.name.function.dspnel"
+					},
+					"1": {
+						"name": "keyword.control.dspnel"
+					}
+				}
+			}]
+		},
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.dspnel",
+				"match": "\\b(return|if|for)\\b"
+			}]
+		},
+		"vars": {
+			"patterns": [ {
+				"match": "(let)\\s+([_$]*[a-zA-Z0-9_$]+)\\s*(=|:)",
+				"captures": {
+					"2": {
+						"name": "variable.name.dspnel"
+					},
+					"1": {
+						"name": "keyword.control.dspnel"
+					}
+				}
+			},
+			{
+				"match": "(fn)\\s+([_$]*[a-zA-Z0-9_$]+)\\s*\\(",
+				"captures": {
+					"2": {
+						"name": "variable.name.dspnel"
+					},
+					"1": {
+						"name": "keyword.control.dspnel"
+					}
+				}
+			},
+			{
+				"match": "([_$]*[a-zA-Z0-9_$]+)\\s*(:)",
+				"captures": {
+					"1": {
+						"name": "variable.name.dspnel"
+					}
+				}
+			}]
+		},
+		"modifiers": {
+			"patterns": [{
+				"name": "storage.modifier.control.dspnel",
+				"match": "\\b(in|out|state)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.dspnel",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.dspnel",
+					"match": "\\\\."
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"name": "keyword.operator.dspnel",
+					"match": "(?<!\\$)\\b(is\\!?)\\b(?!\\$)"
+				},
+				{
+					
+					"match": "[a-zA-Z](')",
+					"captures": {
+						"1": {
+							"name": "keyword.operator.dspnel"
+						}
+					}
+				},
+				{
+					"name": "keyword.operator.bitwise.dspnel",
+					"match": "(<<|>>>?|~|\\^|\\||&)"
+				},
+				{
+					"name": "keyword.operator.assignment.bitwise.dspnel",
+					"match": "((&|\\^|\\||<<|>>>?)=)"
+				},
+				{
+					"name": "keyword.operator.closure.dspnel",
+					"match": "(=>)"
+				},
+				{
+					"name": "keyword.operator.comparison.dspnel",
+					"match": "(==|!=|<=?|>=?)"
+				},
+				{
+					"name": "keyword.operator.assignment.arithmetic.dspnel",
+					"match": "(([+*/%-]|\\~)=)"
+				},
+				{
+					"name": "keyword.operator.assignment.dspnel",
+					"match": "(=)"
+				},
+				{
+					"name": "keyword.operator.range.dspnel",
+					"match": "(..)"
+				},
+				{
+					"name": "keyword.operator.arithmetic.dspnel",
+					"match": "(\\-|\\+|\\*|\\/|\\~\\/|%)"
+				},
+				{
+					"name": "keyword.operator.logical.dspnel",
+					"match": "!|&&|\\|\\|~|or|and|xor|nand"
+				}
+			]
+		},
+		"numbers": {
+			"name": "constant.numeric.dspnel",
+			"match": "\\b([0-9]+(\\.[0-9]*)?(j)?)\\b"
+		},
+		"types": {
+			"name": "storage.type.dspnel",
+			"match": "(f32|f64|u2|u4|u8|u16|u32|u64|i1|i2|i4|i8|i16|i32|c8|c16|c32|c64|bool)"
+		},
+		"comments-inline": {
+			"patterns": [
+				{
+					"include": "#comments-block"
+				},
+				{
+					"match": "((//).*)$",
+					"captures": {
+						"1": {
+							"name": "comment.line.double-slash.dspnel"
+						}
+					}
+				}
+			]
+		},
+		"comments-block": {
+			"patterns": [
+				{
+					"name": "comment.block.dspnel",
+					"begin": "/\\*",
+					"end": "\\*/",
+					"patterns": [
+						{
+							"include": "#comments-block"
+						}
+					]
+				}
+			]
+		}
+	},
+	"scopeName": "source.dspnel"
+}

@@ -7,7 +7,7 @@ Because I am learning and experimenting with Software Defined Radio (SDR), I was
 
 The goal is thus to have a DSL to:
 * express actual graphs and kernels,
-* visualize graphs,
+* visualize graphs as one may found them in text book,
 * apply some transformations and optimizations on graphs,
 * generate code in targetted languages.
 
@@ -50,7 +50,9 @@ let k2 = to_qpsk() : simplest_iir_low_pass_filter(0.5);
 kernel k2 {
     let block1 = to_qpsk();
     let block2 = simplest_iir_low_pass_filter(0.5);
-    block2.iq -> block1.x; // same as block2 -> block1
+    block2.iq -> block1.x;
+    // block2 -> block1
+    // block1 <- block2
 }
 ```
 

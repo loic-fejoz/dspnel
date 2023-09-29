@@ -1,0 +1,45 @@
+let a_vector = [2.0, 1.0];
+let another_vector = [2.0;
+                      1.0];
+let a_matrix = [1.0, 2.0;
+                3.0, 4.0];
+let a_float32: f32 = 1.2;
+
+kernel simplest_iir_low_pass_filter(
+    in  x:     <f32>,
+        alpha: f32,
+    out y:     <f32>) {
+
+    y = alpha * x + (1-alpha) * x'; // this is a comment
+}
+
+kernel to_qpsk(
+    in  symbols: <u2>,
+    out iq:      <c32>) {
+
+    let in_degrees = symbols * 360.0 / 4.0 + 45;
+    let in_radians = in_degrees * pi / 180.0;
+    iq = in_radians.cos() + 1j * in_radians.sin();
+}
+
+let k2 = to_qpsk() | simplest_iir_low_pass_filter(0.5);
+
+kernel mag_phase(
+    in  iq:    <c32>,
+    out mag:   f32,
+    out phase: f32) {
+
+    mag = (iq.re()^2 + iq.im()^2).sqrt(); // ^2 is syntax sugar for .pow(2)
+    phase = (iq.im() / iq.re()).arctan();
+}
+
+kernel example1(
+    in  a:       <c32>,
+    out abs_a:   <f32>,
+    out ejalpha: <f32>) {
+
+    let a_sqr = a.re().pow(2) + a.im().pow(2);
+    let oneOverAbs_a = 1.f / a_sqr.sqrt();
+    abs_a = a_sqr * oneOverAbs_a;
+    ejalpha = a / oneOverAbs_a;
+}

@@ -1,0 +1,25 @@
+{
+  "name": "dspnel",
+  "displayName": "DSPnel",
+  "description": "Language support for DSPnel language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "dspnel",
+      "aliases": ["DSPnel", "dspnel"],
+      "extensions": [".dspnel"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "dspnel",
+      "scopeName": "source.dspnel",
+      "path": "./syntaxes/dspnel.tmLanguage.json"
+    }]
+  }
+}
