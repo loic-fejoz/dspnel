@@ -47,7 +47,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.dspnel",
-				"match": "\\b(return|if|for)\\b"
+				"match": "\\b(return|if|for|ensures|requires|pi|else)\\b"
 			}]
 		},
 		"vars": {
@@ -63,7 +63,7 @@
 				}
 			},
 			{
-				"match": "(fn)\\s+([_$]*[a-zA-Z0-9_$]+)\\s*\\(",
+				"match": "(fn|quickcheck)\\s+([_$]*[a-zA-Z0-9_$]+)\\s*\\(",
 				"captures": {
 					"2": {
 						"name": "variable.name.dspnel"
@@ -140,21 +140,25 @@
 				},
 				{
 					"name": "keyword.operator.range.dspnel",
-					"match": "(..)"
+					"match": "(\\.\\.)"
 				},
 				{
 					"name": "keyword.operator.arithmetic.dspnel",
 					"match": "(\\-|\\+|\\*|\\/|\\~\\/|%)"
 				},
 				{
+					"name": "keyword.operator.arithmetic.dspnel",
+					"match": "(\\/)[^\\/]"
+				},
+				{
 					"name": "keyword.operator.logical.dspnel",
-					"match": "!|&&|\\|\\|~|or|and|xor|nand"
+					"match": "(!|&&|\\|\\|~|or|and|xor|nand)"
 				}
 			]
 		},
 		"numbers": {
 			"name": "constant.numeric.dspnel",
-			"match": "\\b([0-9]+(\\.[0-9]*)?(j)?)\\b"
+			"match": "\\b([0-9]+(\\.[0-9]*)?(e(-)?[0-9]+)?(j)?)\\b"
 		},
 		"types": {
 			"name": "storage.type.dspnel",

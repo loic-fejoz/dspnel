@@ -36,10 +36,17 @@ kernel mag_phase(
 kernel example1(
     in  a:       <c32>,
     out abs_a:   <f32>,
-    out ejalpha: <f32>) {
+    out ejalpha: <f32>)
+ensures
+    abs_a >= 0;
+{
 
     let a_sqr = a.re().pow(2) + a.im().pow(2);
     let oneOverAbs_a = 1.f / a_sqr.sqrt();
     abs_a = a_sqr * oneOverAbs_a;
     ejalpha = a / oneOverAbs_a;
+}
+
+quickcheck example1_always_positive(in a: <32>) {
+    return a | example1().abs_a >= 0;
 }

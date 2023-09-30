@@ -1,9 +1,33 @@
+// [[f32;N], N] -> [f32; N, N]
 fn DFT(N: u32) {
-    return [[(-2*k*l*pi*j/n).exp() for k in 0..N] for l in 0..N];
+    return [[(-2 * k * l * pi * 1j / N).exp() for k in 0..N] for l in 0..N];
 }
 
 let DFT_4 = DFT(4);
 
-let DFT_4_kernel = DFT_4.kernel(); /// Convert the maxtrix into a kernel
+let DFT_4_kernel = DFT_4.kernel(); // Convert the maxtrix into a kernel
 
+fn twiddle(N: u32, M: u32) {
+    return [[
+        if k ==l {
+            if k < M and l < M {
+                1
+            } else {
+                (-2 * (k-M) * (l-M) * pi * 1j / N).exp()
+            }
+        } else {
+            0
+        }
+        for k in 0..N]
+        for l in 0..N];
+}
 
+quickcheck twiddle_part1(N: u32, M: u32, k: u32, l: u32)
+requires
+    k < N;
+    l < N;
+{
+    let T_N_M = twiddle(N, M);
+    let w_k_l = T_N_M[k, l];
+    return w_k_l == 0 or w_k_l == 1;
+}

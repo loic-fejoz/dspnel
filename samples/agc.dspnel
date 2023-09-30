@@ -27,5 +27,15 @@ kernel AGC(
     // clamp to 120 dB gain
     g = g.min(1e6);
 
+    // let gain_multiplier = smoothed_energy_estimate.map(|x| if x > 1e-6 { (-0.5*alpha * x.log()).exp() } else { 1 });
+    // let gain_multiplier = smoothed_energy_estimate.when(x > 1e-6, (-0.5*alpha * x.log()).exp(), 1);
+    // let gain_multiplier = if x > 1e-6 { (-0.5*alpha * x.log()).exp() } else { 1 } for x in smoothed_energy_estimate;
+    // let gain_multiplier = if smoothed_energy_estimate > 1e-6 {
+    //     (-0.5*alpha * smoothed_energy_estimate.log()).exp();
+    // } else {
+    //     1
+    // };
+    // g = (g' * gain_multiplier).min(1e6);
+
     y *= scale;
 }
