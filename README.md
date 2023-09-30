@@ -13,6 +13,8 @@ The goal is thus to have a DSL to:
 
 ## Brainstorming
 
+See also files in [samples folder](/samples/).
+
 ```dspnel
 let a_vector = [2.0, 1.0];
 let another_vector = [2.0;
