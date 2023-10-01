@@ -1,5 +1,20 @@
-// [[f32;N], N] -> [f32; N, N]
-fn DFT(N: u32) {
+fn identity(N: usize)
+{
+    return [[
+        if k == l {
+            1
+        } else {
+            0
+        }
+        for k in 0..N]
+        for l in 0..N]
+}
+
+// [[f32;N]; N] -> [f32; N, N]
+fn DFT(N: usize)
+requires
+    N >= 2
+{
     return [[(-2 * k * l * pi * 1j / N).exp() for k in 0..N] for l in 0..N];
 }
 
@@ -7,27 +22,101 @@ let DFT_4 = DFT(4);
 
 let DFT_4_kernel = DFT_4.kernel(); // Convert the maxtrix into a kernel
 
-fn twiddle(N: u32, M: u32) {
+let butterfly_matrix = DFT(2);
+
+assert butterfly_matrix == [1, 1;
+                            1, -1];
+
+fn kronecker(A: [[f32;];], B: [[f32;];])
+{
+    let n, m = A.size();
+    let q, s = B.size();
     return [[
-        if k ==l {
-            if k < M and l < M {
-                1
+        A[k/m][l/s] * B[k%m][l%s]
+        for k in 0..(m*q)]
+        for l in 0..(n*s) ]
+}
+
+fn direct_sum(A: [[f32;];], B: [f32;,])
+{
+    let n, m = A.size();
+    let q, s = B.size();
+    return [[
+        if k <= n {
+            if l <= m {
+                A[k, l]
             } else {
-                (-2 * (k-M) * (l-M) * pi * 1j / N).exp()
+                0
             }
+        } else {
+            if l > m {
+                B[k-n, l-m]
+            } else {
+                0
+            }
+        }
+        for k in 0..(n+q)]
+        for l in 0..(m+s) ]
+}
+
+/// The stride permutation matrix L^(m*n)_(n) 
+/// permutes an input vector x of length m*n as follows
+/// x[i*m + j] |-> x[j*n + i]
+/// for all 0 <= j < m, 0 <= i < n
+fn stride_permutation(a: usize, n: usize)
+requires
+    a % n == 0
+{
+    let m: u32 = a / n;
+    return [[
+        if i * m + j == j * n + i {
+            1
         } else {
             0
         }
-        for k in 0..N]
-        for l in 0..N];
+        for i in 0..n]
+        for j in 0..m];
 }
 
-quickcheck twiddle_part1(N: u32, M: u32, k: u32, l: u32)
-requires
-    k < N;
-    l < N;
+fn diagonal(A: [;])
 {
-    let T_N_M = twiddle(N, M);
-    let w_k_l = T_N_M[k, l];
-    return w_k_l == 0 or w_k_l == 1;
+    let n = A.len();
+    return [[
+        if k == l {
+            A[k]
+        } else {
+            0
+        }
+        for k in 0..n]
+        for l in 0..n]
+}
+
+/// Compute the diagonal twiddle matrix
+fn twiddle(N: usize, s: u32)
+{
+    let w = (-2 * pi * 1j / N).exp();
+    return [
+        ([1] + [w^j; N-2] + [w^(j*(s-1))])
+            .diagonal()
+        for j in 0..N]
+        .reduce(direct_sum);
+}
+
+assert twiddle(2, 2) == [1, 0, 0, 0;
+                         0, 1, 0, 0;
+                         0, 0, 1, 0;
+                         0, 0, 0, -1j]
+
+
+/// Cooley-Tukey Fast Fourier Transform
+quickcheck CooleyTukey(q: usize, s: usize)
+{
+    let DFT_qs = DFT(q * s);
+    let DFT_q = DFT(q);
+    let I_s = identity(s);
+    let D_qs = twiddle(q,s);
+    let I_q = identity(q);
+    let DFT_s = DFT(s);
+    let L_qs_q = stride_permutation(q*s, q)
+    return DFT_qs == DFT_q.kronecker(I_s) * D_qs * (I_q.kronecker(DFT_s)) * L_qs_q;
 }

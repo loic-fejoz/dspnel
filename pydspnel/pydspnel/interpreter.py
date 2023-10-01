@@ -22,6 +22,14 @@ class DSPMatrix:
         if val.ndim == 1:
             val = numpy.array(val, ndmin=2)
         return DSPMatrix(val.transpose(), True)
+    
+    def size(self):
+        pass
+
+    def len(self):
+        s = self.size()
+        assert s.len() == 1
+        return s[0]
 
 class DSPnelInterpreter:
     def __init__(self) -> None:
