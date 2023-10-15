@@ -44,9 +44,10 @@ class DSPnelInterpreter:
                 val = val[:-1]
                 multiplier = complex(0, 1)
             try:
-                return multiplier * int(val)
+                val = multiplier * int(val)
             except:
-                return multiplier * float(val)
+                val = multiplier * float(val)
+            return (val)
         elif kind == 'Add':
             return self.evalExpr(expr.left, env) + self.evalExpr(expr.right, env)
         elif kind == 'Mul':
@@ -61,9 +62,14 @@ class DSPnelInterpreter:
             return env[expr.value]
         elif kind == 'MethodCall':
             receiver = self.evalExpr(expr.receiver, env)
-            mthd = getattr(receiver, expr.method_name)
-            args = [self.evalExpr(arg, env) for arg in expr.args]
-            return mthd(*args)
+            mthd = getattr(receiver, expr.method_name, None)
+            if mthd:
+                args = [self.evalExpr(arg, env) for arg in expr.args]
+                return mthd(*args)
+            else:
+                mthd = getattr(expr.receiver.dspnel_type, 'dsp_' + expr.method_name)
+                args = [receiver] + [self.evalExpr(arg, env) for arg in expr.args]
+                return mthd(*args)
         else:
             raise Exception('Not yet handled: ' + kind)
 

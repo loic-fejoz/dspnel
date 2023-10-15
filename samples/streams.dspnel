@@ -1,0 +1,20 @@
+fn range(
+    start: T = 0,
+    step: T = 1,
+    state current: T = start,
+    out y: <T>,
+) {
+    y.push(current);
+    current += step;
+}
+
+fn cosine(
+    sample_rate: samprate,
+    freq: freq,
+    amplitude: f64,
+    offset: f64 = 0,
+    initial_phase: phase = 0,
+    out y: <f64>,
+) {
+    
+}

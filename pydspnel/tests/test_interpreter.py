@@ -22,6 +22,12 @@ def test_arith():
 
     assert 4 == eval('12 / 3')
 
+    assert complex(2, 3) == eval('(2 - 3j).conj()')
+    assert complex(2, -3) == eval('(2 + 3j).conj()')
+
+    assert 2 == eval('(2 + 3j).re()')
+    assert 3 == eval('(2 + 3j).im()')
+
 def test_matrix():
     assert DSPMatrix([2.0, 1.0]) == eval("[2.0, 1.0]")
     assert DSPMatrix([[2.0, 3.5], [1.0, 4.5]]) == eval("[2.0, 3.5; 1.0, 4.5]")

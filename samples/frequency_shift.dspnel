@@ -1,0 +1,7 @@
+kernel frequency_shift(
+    target_freq: freq,
+    in x: <c64>,
+    out y: <c64>,
+) {
+    y = x * (-2j * pi * target_freq * streams.range() / x.sample_rate).exp();
+}

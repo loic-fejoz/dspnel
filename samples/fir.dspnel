@@ -1,0 +1,8 @@
+fn window(
+    len: usize = 101,
+    cutoff: freq = 150e3,
+    fs: sample_rate,
+    out y: [c64],
+) {
+
+}

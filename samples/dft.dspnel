@@ -1,4 +1,4 @@
-fn identity(N: usize)
+fn identity(N: usize,)
 {
     return [[
         if k == l {
@@ -7,11 +7,11 @@ fn identity(N: usize)
             0
         }
         for k in 0..N]
-        for l in 0..N]
+        for l in 0..N];
 }
 
 // [[f32;N]; N] -> [f32; N, N]
-fn DFT(N: usize)
+fn DFT(N: usize,)
 requires
     N >= 2
 {

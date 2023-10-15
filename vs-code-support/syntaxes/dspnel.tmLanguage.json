@@ -162,7 +162,7 @@
 		},
 		"types": {
 			"name": "storage.type.dspnel",
-			"match": "(f32|f64|u2|u4|u8|u16|u32|u64|i1|i2|i4|i8|i16|i32|c8|c16|c32|c64|bool)"
+			"match": "(f32|f64|u2|u4|u8|u16|u32|u64|i16|i2|i4|i8|i1|i32|c8|c16|c32|c64|bool|samprate|freq|usize)"
 		},
 		"comments-inline": {
 			"patterns": [

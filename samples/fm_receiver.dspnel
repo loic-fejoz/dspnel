@@ -1,0 +1,34 @@
+kernel fm_receiver(
+    target_freq: Option<freq>,
+    state max_s: f64,
+    in x: <c64>,
+    out y: <i16>,
+) {
+    let x = if target_freq {
+        x * (-2j * pi * target_freq * streams.range() / x.sample_rate).exp();
+    } else {
+        x
+    };
+    // Low pass filter to isolate FM signal
+    let h = fir.window(101, cutoff: 150e3, fs: sample_rate);
+    x = x.convolve(h);
+    x = x.resample_poly(10, (sample_rate/500e3*10).as(usize)) // target 500kHz
+
+    //let phase := y * (y').conj();
+    x = x.phase().unwrap().diff();
+    
+    //FM deemphasis
+    let tau = 50e-6;
+    let dt = 1 / sample_rate;
+    let alpha = dt / (tau + dt);
+    x = x * alpha + (1-alpha) * x'; //this is the simplest IIR LPF
+
+    let s = x.decimate(10); // mono audio close to 48 kHz
+
+    // Normalize
+    max_s = max_s.max(s.abs().max());
+    s = s / max_s;
+    s = s.clip(-1, 1);
+
+    y = s.scale_convert();
+}
