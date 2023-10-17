@@ -64,9 +64,6 @@ def test_assign():
     tokens = [tk.name for tk in lexer.lex("let DFT_4_kernel = DFT_4.foo();")]
     assert(tokens == ['LET', 'IDENTIFIER', 'EQUALS', 'IDENTIFIER', 'DOT', 'IDENTIFIER', 'OPEN_PARENS', 'CLOSE_PARENS', 'SEMICOLON'])
 
-    tokens = [tk.name for tk in lexer.lex("let DFT_4_kernel = DFT_4.kernel();")]
-    assert(tokens == ['LET', 'IDENTIFIER', 'EQUALS', 'IDENTIFIER', 'DOT', 'KERNEL', 'OPEN_PARENS', 'CLOSE_PARENS', 'SEMICOLON'])
-
     tokens = [tk.name for tk in lexer.lex("a = 3 * a;")]
     assert(tokens == ['IDENTIFIER', 'EQUALS', 'NUMBER', 'MUL', 'IDENTIFIER', 'SEMICOLON'])
 
@@ -82,6 +79,9 @@ def test_assign():
 def test_expr():
     tokens = [tk.name for tk in lexer.lex("a.b.foo()")]
     assert(tokens == ['IDENTIFIER', 'DOT', 'IDENTIFIER', 'DOT', 'IDENTIFIER', 'OPEN_PARENS', 'CLOSE_PARENS'])
+
+    tokens = [tk.name for tk in lexer.lex("a.b.foo(arg1: c)")]
+    assert(tokens == ['IDENTIFIER', 'DOT', 'IDENTIFIER', 'DOT', 'IDENTIFIER', 'OPEN_PARENS', 'IDENTIFIER', 'DDOTS', 'IDENTIFIER', 'CLOSE_PARENS'])
 
     tokens = [tk.name for tk in lexer.lex("if a { b } else { c }")]
     assert(tokens == ['IF', 'IDENTIFIER', 'OPEN_BRACKETS', 'IDENTIFIER', 'CLOSE_BRACKETS', 'ELSE', 'OPEN_BRACKETS', 'IDENTIFIER', 'CLOSE_BRACKETS'])
@@ -118,3 +118,11 @@ def test_expr():
 
     tokens = [tk.name for tk in lexer.lex("a ==> b")]
     assert(tokens == ['IDENTIFIER', 'IMPLY', 'IDENTIFIER'])
+
+
+def test_kernel():
+    tokens = [tk.name for tk in lexer.lex("kernel A(){}")]
+    assert(tokens == ['KERNEL', 'IDENTIFIER', 'OPEN_PARENS', 'CLOSE_PARENS', 'OPEN_BRACKETS', 'CLOSE_BRACKETS'])
+
+    tokens = [tk.name for tk in lexer.lex("let DFT_4_kernel = DFT_4.kernel();")]
+    assert(tokens == ['LET', 'IDENTIFIER', 'EQUALS', 'IDENTIFIER', 'DOT', 'IDENTIFIER', 'OPEN_PARENS', 'CLOSE_PARENS', 'SEMICOLON'])

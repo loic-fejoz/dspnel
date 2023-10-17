@@ -72,6 +72,22 @@ def test_expr():
     ast = ast.asLisp()
     assert ast == '(MethodCall foo () (a b))'
 
+    # ast = parse('b.foo(arg1: a)')
+    # ast = ast.asLisp()
+    # assert ast == '(MethodCall foo b () ((arg1 a)))'
+
+    # ast = parse('foo(arg1: a)')
+    # ast = ast.asLisp()
+    # assert ast == '(MethodCall foo () () ((arg1 a)))'
+
+    # ast = parse('foo(a, arg1: b)')
+    # ast = ast.asLisp()
+    # assert ast == '(MethodCall foo () (a) ((arg1 b)))'
+
+    # ast = parse('foo(arg1: a, arg3: b)')
+    # ast = ast.asLisp()
+    # assert ast == '(MethodCall foo () () ((arg1 a) (arg3 b)))'
+
     ast = parse('a.b * b.a')
     ast = ast.asLisp()
     assert ast == '(Mul (GetAttr b a) (GetAttr a b))'
@@ -119,6 +135,27 @@ def test_expr():
     ast = parse('a.pow(3 * b)')
     ast = ast.asLisp()
     assert ast == '(MethodCall pow a ((Mul 3 b)))'
+
+    # Could be bitwise or, or kernels connection
+    ast = parse('a | b')
+    ast = ast.asLisp()
+    assert ast == '(Pipe a b)'
+
+    ast = parse('a & b')
+    ast = ast.asLisp()
+    assert ast == '(BitwiseAnd a b)'
+
+    ast = parse('a << b')
+    ast = ast.asLisp()
+    assert ast == '(BitShiftLeft a b)'
+
+    ast = parse('a >> b')
+    ast = ast.asLisp()
+    assert ast == '(BitShiftRight a b)'
+
+    ast = parse('~a')
+    ast = ast.asLisp()
+    assert ast == '(BitNegation a)'
 
 def test_statement():
     ast = parse('let a;')
@@ -256,7 +293,7 @@ def test_statement():
     assert ast == '(Fn A ((Param a u32 () ())) (Block (Return a)) ((GreaterThan a 10) (LessEquals a 20)) ())'  
 
     ast = parse("""
-quickcheck a_is_always_positive(in a: <32>) {
+quickcheck a_is_always_positive(in a: <u32>,) {
     return a() >= 0;
 }
     """)
@@ -282,6 +319,30 @@ def test_typeexpr():
     ast = parse('let a: foo.bar.baz<u32>;')
     ast = ast.asLisp()
     assert ast == '(LetStatement a (MethodCall baz (GetAttr bar foo) (u32)) ())'
+
+    ast = parse('let a: [u32;];')
+    ast = ast.asLisp()
+    assert ast == '(LetStatement a (ArrayOf u32 ()) ())'
+
+    ast = parse('let a: [u32; 3];')
+    ast = ast.asLisp()
+    assert ast == '(LetStatement a (ArrayOf u32 3) ())'
+
+    ast = parse('let a: [[u32;];];')
+    ast = ast.asLisp()
+    assert ast == '(LetStatement a (ArrayOf (ArrayOf u32 ()) ()) ())'
+
+    ast = parse('let a: [[u32; 5];];')
+    ast = ast.asLisp()
+    assert ast == '(LetStatement a (ArrayOf (ArrayOf u32 5) ()) ())'
+
+    ast = parse('let a: [[u32;]; 5];')
+    ast = ast.asLisp()
+    assert ast == '(LetStatement a (ArrayOf (ArrayOf u32 ()) 5) ())'
+
+    ast = parse('let a: [[u32; 3]; 5];')
+    ast = ast.asLisp()
+    assert ast == '(LetStatement a (ArrayOf (ArrayOf u32 3) 5) ())'
 
 def test_comment():
     ast = parse('let a = 3; // todo')

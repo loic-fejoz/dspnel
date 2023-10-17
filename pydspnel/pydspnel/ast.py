@@ -1,8 +1,14 @@
 from rply.token import BaseBox
 
 def asLisp(v):
+    if v is None:
+        return '()'
     if type(v) == type([]):
         return ' '.join([asLisp(o) for o in v])
+    if type(v) == type(()):
+        return '(' + ' '.join([asLisp(o) for o in v]) + ')'
+    if type(v) == type(""):
+        return str(v)
     return v.asLisp()
 
 class Number(BaseBox):
@@ -87,6 +93,24 @@ class Imply(BinaryOp):
 class Modulo(BinaryOp):
     pass
 
+class Pipe(BinaryOp):
+    pass
+
+class BitwiseOr(Pipe):
+    pass
+
+class LinearConnection(Pipe):
+    pass
+
+class BitwiseAnd(BinaryOp):
+    pass
+
+class BitShiftLeft(BinaryOp):
+    pass
+
+class BitShiftRight(BinaryOp):
+    pass
+
 class UnaryOp(Expression):
     def __init__(self, inner):
         super().__init__()
@@ -102,6 +126,9 @@ class Not(UnaryOp):
     pass
 
 class Prime(UnaryOp):
+    pass
+
+class BitNegation(UnaryOp):
     pass
 
 class Row(BaseBox):
@@ -142,16 +169,18 @@ class Matrix(BaseBox):
         return '(Matrix {})'.format(' '.join([row.asLisp() for row in self.rows]))
     
 class MethodCall(Expression):
-    def __init__(self, method_name, receiver, args):
+    def __init__(self, method_name, receiver, args, named_args=None):
         super().__init__()
         self.method_name = method_name
         self.receiver = receiver
         self.args = args
+        self.named_args = named_args
 
     def asLisp(self):
         args = ' '.join([asLisp(arg) for arg  in self.args])
         receiver = self.receiver and self.receiver.asLisp() or '()'
-        return "(MethodCall {} {} ({}))".format(self.method_name, receiver, args)
+        named_args = self.named_args and (' (' + asLisp(self.named_args) + ')') or ''
+        return "(MethodCall {} {} ({}){})".format(self.method_name, receiver, args, named_args)
     
 class ConditionalExpression(Expression):
     def __init__(self, condition, then_expr, else_expr=None):
@@ -269,6 +298,15 @@ class Stream(BaseBox):
 
     def asLisp(self):
         return "(Stream {})".format(self.inner.asLisp())  
+    
+class ArrayOf(BaseBox):
+    def __init__(self, inner_type, size):
+        super().__init__()
+        self.inner = inner_type
+        self.size = size
+
+    def asLisp(self):
+        return "(ArrayOf {} {})".format(self.inner.asLisp(), asLisp(self.size))  
     
 class ReturnStatement(Statement):
     def __init__(self, expr=None):

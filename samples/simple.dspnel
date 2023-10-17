@@ -25,7 +25,7 @@ kernel to_qpsk(
     iq = in_radians.cos() + 1j * in_radians.sin();
 }
 
-// let k2 = to_qpsk() | simplest_iir_low_pass_filter(0.5);
+let k2 = to_qpsk() | simplest_iir_low_pass_filter(0.5);
 
 kernel mag_phase(
     in  iq:    <c32>,

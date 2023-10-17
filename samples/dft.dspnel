@@ -27,8 +27,10 @@ let butterfly_matrix = DFT(2);
 assert butterfly_matrix == [1, 1;
                             1, -1];
 
-fn kronecker(A: [[f32;];], B: [[f32;];])
-{
+fn kronecker(
+    A: [[f32;];],
+    B: [[f32;];],
+) {
     let n, m = A.size();
     let q, s = B.size();
     return [[

@@ -12,31 +12,38 @@ pg = ParserGenerator(
      'KERNEL', 'STATE', 'LT', 'GT', 'GEQ', 'LEQ', 'FUNCTION', 'RETURN',
      'REQUIRES', 'ENSURES', 'MUL_ASSIGN', 'SUB_ASSIGN', 'ADD_ASSIGN',
      'DEQUALS', 'DIFFERENT', 'IMPLY', 'XOR', 'OR', 'AND', 'NOT', 'MODULO',
-     'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'QUICKCHECK'
+     'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'QUICKCHECK', 'PIPE', 'AMPERSAND',
+     'BTLEFT', 'BTRIGHT', 'BITNEG', 'OPEN_SQBRACKET', 'CLOSE_SQBRACKET'
     ],
     # A list of precedence rules with ascending precedence, to
     # disambiguate ambiguous production rules.
     precedence=[
+        ('left', ['COMMA']),
         ('left', ['SEMICOLON']),
         ('left', ['IMPLY']),
         ('left', ['OR', 'XOR']),
         ('left', ['AND']),
         ('right', ['NOT']),
         ('left', ['GT', 'LT', 'DEQUALS', 'DIFFERENT', 'GEQ', 'LEQ']),
+        ('left', ['PIPE']),
+        ('left', ['AMPERSAND']),
+        ('left', ['BTLEFT', 'BTRIGHT']),
         ('left', ['PLUS', 'MINUS']),
         ('left', ['MUL', 'DIV', 'MODULO']),
+        ('right', ['BITNEG']),
         ('right', ['POW']),
-        ('left', ['DOT']),
         ('right', ['PRIME']),
+        ('left', ['DOT']),
+        ('left', ['OPEN_PARENS']),
     ]
 )
 
-@pg.production('optional_stmts_list : stmt optional_stmts_list')
+@pg.production('optional_stmts_list : optional_stmts_list stmt')
 @pg.production('optional_stmts_list : ')
 def stmts_list(p):
     if len(p) == 0:
         return []
-    return [ p[0] ] + p[1]
+    return p[0] + [ p[1] ]
 
 @pg.production('stmt : block')
 def statement_block(p):
@@ -164,6 +171,10 @@ def type_constructor_call(p):
     receiver = p[0].receiver
     return MethodCall(method_name, receiver, [ p[2] ])
 
+@pg.production('type_expression : OPEN_SQBRACKET type_expression SEMICOLON optional_expression CLOSE_SQBRACKET')
+def type_array_of(p):
+    return ArrayOf(p[1], p[3])
+
 @pg.production('type_expression : IDENTIFIER')
 def type_expression_identifier(p):
     return Identifier(p[0].getstr())
@@ -265,6 +276,10 @@ token_to_constructor['OR'] = Or
 token_to_constructor['XOR'] = Xor
 token_to_constructor['IMPLY'] = Imply
 token_to_constructor['MODULO'] = Modulo
+token_to_constructor['PIPE'] = Pipe # Typing will translate into BitwiseOr or LinearConnection
+token_to_constructor['AMPERSAND'] = BitwiseAnd
+token_to_constructor['BTLEFT'] = BitShiftLeft
+token_to_constructor['BTRIGHT'] = BitShiftRight
 
 @pg.production('expression : expression AND expression')
 @pg.production('expression : expression OR expression')
@@ -281,6 +296,10 @@ token_to_constructor['MODULO'] = Modulo
 @pg.production('expression : expression GEQ expression')
 @pg.production('expression : expression DEQUALS expression')
 @pg.production('expression : expression DIFFERENT expression')
+@pg.production('expression : expression PIPE expression')
+@pg.production('expression : expression AMPERSAND expression')
+@pg.production('expression : expression BTLEFT expression')
+@pg.production('expression : expression BTRIGHT expression')
 def expression_binop(p):
     left = p[0]
     right = p[2]
@@ -306,9 +325,11 @@ def expression_power(p):
 unary_token_to_constructor = {}
 unary_token_to_constructor['NOT'] = Not
 unary_token_to_constructor['MINUS'] = UnaryMinus
+unary_token_to_constructor['BITNEG'] = BitNegation
 
 @pg.production('expression : MINUS expression')
 @pg.production('expression : NOT expression')
+@pg.production('expression : BITNEG expression')
 def expression_unaryop(p):
     inner = p[1]
     constructor = unary_token_to_constructor.get(p[0].gettokentype(), None)
@@ -329,20 +350,64 @@ def expression_tail(p):
         return p
     else:
         return []
+    
+# @pg.production('named_arguments_list : IDENTIFIER DDOTS expression')
+# def named_arguments_list_singleton(p):
+#     return [ (p[1].getstr(), p[3]) ]
+
+# @pg.production('named_arguments_list : named_arguments_list COMMA IDENTIFIER DDOTS expression')
+# def expression_tail(p):
+#     return [ p[0] ] + [ p[2] ]
+
+# @pg.production('named_arguments_emptylist : named_arguments_list')
+# def named_arguments_list(p):
+#     return p[0]
+
+# @pg.production('named_arguments_emptylist : ')
+# def named_arguments_emptylist(p):
+#     return []
+
+# @pg.production('expression : expression DOT IDENTIFIER OPEN_PARENS expression_emptylist named_arguments_emptylist CLOSE_PARENS')
+
+# @pg.production('optional_named_param : IDENTIFIER DDOTS')
+# @pg.production('optional_named_param : ')
+# def optional_named_param(p):
+#     if len(p) == 0:
+#         return None
+#     return Identifier(p[0].getstr())
+
+# @pg.production('args_list : args_list COMMA optional_named_param expression')
+# def args_list_tail(p):
+#     if p[2] is None:
+#         return p[0] + [ p[3] ]
+#     else:
+#         return p[0] + [ p[3] ]
+    
+# @pg.production('args_list : optional_named_param expression')
+# def args_list_tail(p):
+#     return [ p[1] ]
+
+# @pg.production('args_list : ')
+# def args_list_tail(p):
+#     return []
 
 @pg.production('expression : expression DOT IDENTIFIER OPEN_PARENS expression_emptylist CLOSE_PARENS')
 def expression_methodcall(p):
     return MethodCall(p[2].getstr(), p[0], p[4])
 
-@pg.production('expression : expression DOT IDENTIFIER')
-def expression_getattr(p):
-    return GetAttribute(p[2].getstr(), p[0])
-
 @pg.production('expression : expression OPEN_PARENS expression_emptylist CLOSE_PARENS')
 def expression_functioncall(p):
     if p[0].__class__ == Identifier:
-        return MethodCall(p[0].value, None, [ p[2] ])
+        return MethodCall(p[0].value, None, p[2])
+    elif p[0].__class__ == GetAttribute:
+        receiver = p[0].receiver
+        method_name = p[0].attr_name
+        return MethodCall(method_name, receiver, p[2])
     return MethodCall(None, p[0], p[2])
+
+@pg.production('expression : expression DOT IDENTIFIER')
+def expression_getattr(p):
+    return GetAttribute(p[2].getstr(), p[0])
 
 @pg.production('block : OPEN_BRACKETS optional_stmts_list CLOSE_BRACKETS')
 def block(p):
