@@ -244,6 +244,9 @@ class Kernel(ProtoFunction):
 
 class Function(ProtoFunction):
     prefix = 'Fn'
+
+class Quickcheck(ProtoFunction):
+    prefix = 'Quickcheck'
   
 class Parameter(BaseBox):
     def __init__(self, variable_name, type_expr=None, initialization=None, qualifier=None):

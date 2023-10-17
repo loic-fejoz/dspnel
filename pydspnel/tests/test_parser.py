@@ -106,7 +106,19 @@ def test_expr():
 
     ast = parse('a % 2')
     ast = ast.asLisp()
-    assert ast == '(Modulo a 2)'  
+    assert ast == '(Modulo a 2)'
+
+    ast = parse('a^2')
+    ast = ast.asLisp()
+    assert ast == '(MethodCall pow a (2))'
+
+    ast = parse('a^b')
+    ast = ast.asLisp()
+    assert ast == '(MethodCall pow a (b))'
+
+    ast = parse('a.pow(3 * b)')
+    ast = ast.asLisp()
+    assert ast == '(MethodCall pow a ((Mul 3 b)))'
 
 def test_statement():
     ast = parse('let a;')
@@ -242,6 +254,12 @@ def test_statement():
     }""")
     ast = ast.asLisp()
     assert ast == '(Fn A ((Param a u32 () ())) (Block (Return a)) ((GreaterThan a 10) (LessEquals a 20)) ())'  
+
+    ast = parse("""
+quickcheck a_is_always_positive(in a: <32>) {
+    return a() >= 0;
+}
+    """)
 
 
 def test_typeexpr():

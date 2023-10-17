@@ -33,7 +33,7 @@ kernel mag_phase(
     out phase: f32,
 ) {
 
-    mag = (iq.re().pow(2) + iq.im().pow(2)).sqrt(); // ^2 is syntax sugar for .pow(2)
+    mag = (iq.re()^2 + iq.im()^2).sqrt(); // ^2 is syntax sugar for .pow(2)
     phase = (iq.im() / iq.re()).arctan();
 }
 
@@ -52,8 +52,7 @@ ensures
     ejalpha = a / oneOverAbs_a;
 }
 
-/*
-quickcheck example1_always_positive(in a: <32>) {
+
+quickcheck example1_always_positive(in a: <u32>,) {
     return a | example1().abs_a >= 0;
 }
-*/

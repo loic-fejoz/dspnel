@@ -12,7 +12,7 @@ pg = ParserGenerator(
      'KERNEL', 'STATE', 'LT', 'GT', 'GEQ', 'LEQ', 'FUNCTION', 'RETURN',
      'REQUIRES', 'ENSURES', 'MUL_ASSIGN', 'SUB_ASSIGN', 'ADD_ASSIGN',
      'DEQUALS', 'DIFFERENT', 'IMPLY', 'XOR', 'OR', 'AND', 'NOT', 'MODULO',
-     'COMMENT', 'DOCCOMMENT', 'PRIME'
+     'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'QUICKCHECK'
     ],
     # A list of precedence rules with ascending precedence, to
     # disambiguate ambiguous production rules.
@@ -25,6 +25,7 @@ pg = ParserGenerator(
         ('left', ['GT', 'LT', 'DEQUALS', 'DIFFERENT', 'GEQ', 'LEQ']),
         ('left', ['PLUS', 'MINUS']),
         ('left', ['MUL', 'DIV', 'MODULO']),
+        ('right', ['POW']),
         ('left', ['DOT']),
         ('right', ['PRIME']),
     ]
@@ -78,13 +79,17 @@ def optional_expr(p):
         return None
     return p[0]
 
-@pg.production('fn_or_kernel : FUNCTION')
+@pg.production('protofunction : FUNCTION')
 def fn_qualif(p):
     return Function
 
-@pg.production('fn_or_kernel : KERNEL')
+@pg.production('protofunction : KERNEL')
 def kernel_qualif(p):
     return Kernel
+
+@pg.production('protofunction : QUICKCHECK')
+def quickcheck_qualif(p):
+    return Quickcheck
 
 @pg.production('assumptions : REQUIRES expression_list')
 @pg.production('assumptions : ')
@@ -100,7 +105,7 @@ def guarantees(p):
         return []
     return p[1]
 
-@pg.production('stmt : optional_doccomment fn_or_kernel IDENTIFIER OPEN_PARENS parameters_list CLOSE_PARENS assumptions guarantees block')
+@pg.production('stmt : optional_doccomment protofunction IDENTIFIER OPEN_PARENS parameters_list CLOSE_PARENS assumptions guarantees block')
 def statement_kernel(p):
     protofunc = p[1](p[2].getstr(), p[4], p[8], p[6], p[7])
     protofunc.doc = p[0]
@@ -284,6 +289,19 @@ def expression_binop(p):
         raise AssertionError('Oops, this should not be possible!')
     else:
         return constructor(left, right)
+    
+
+# Only accept limited expression as the normal way is the pow method
+@pg.production('expression : expression POW IDENTIFIER')
+@pg.production('expression : expression POW NUMBER')
+def expression_power(p):
+    receiver = p[0]
+    power = p[2].getstr()
+    if p[2].gettokentype() == 'NUMBER':
+        power = Number(power)
+    else:
+        power = Identifier(power)
+    return MethodCall('pow', receiver, [power])
 
 unary_token_to_constructor = {}
 unary_token_to_constructor['NOT'] = Not
