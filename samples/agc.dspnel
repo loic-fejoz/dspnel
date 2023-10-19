@@ -7,7 +7,7 @@ kernel AGC(
     state g: f32 = 1.0, 
     /// AGC locked flag
     state is_locked: bool,
-    in x: <c32>,
+    in  x: <c32>,
     out y: <c32>,
 ){
     // apply gain to input sample

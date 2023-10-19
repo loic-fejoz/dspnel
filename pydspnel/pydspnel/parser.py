@@ -346,10 +346,10 @@ def expression_unaryop(p):
 @pg.production('expression_emptylist : expression_list')
 @pg.production('expression_emptylist : ')
 def expression_tail(p):
-    if p:
-        return p
-    else:
+    if len(p) == 0:
         return []
+    else:
+        return p[0]
     
 # @pg.production('named_arguments_list : IDENTIFIER DDOTS expression')
 # def named_arguments_list_singleton(p):
