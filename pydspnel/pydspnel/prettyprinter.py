@@ -165,8 +165,44 @@ class PrettyPrinter:
                 sep(', ', [self.pp(a) for a in ast.args]),
                 ')'
             ])
+        elif t == Stream:
+            return concat(['<', self.pp(ast.inner), '>'])
+        elif t == Comment:
+            return concat(['\n', ast.text, '\n'])
+        elif t == LetStatement:
+            d = self.pp_letstmt(ast)
+            return concat([concat(d), '\n'])
+        elif t == Prime:
+            return concat([self.pp(ast.inner), "'"])
+        elif t == UnaryMinus:
+            return concat(['-', self.pp(ast.inner)])
+        elif t == ConditionalExpression:
+            return concat(['if ', self.pp(ast.condition), ' ', bracket('{\n', self.pp(ast.then_expr), '}\n')])
+        elif t == ReturnStatement:
+            if ast.expr:
+                return concat(['return ', self.pp(ast.expr), ';\n'])
+            else:
+                return 'return;\n'
         else:
             raise BaseException("Unknown type {} '{}'".format(repr(t), asLisp(ast)))
+
+    def pp_letstmt(self, ast):
+        row = [ 'let ',
+                ast.variable_name,
+                ''.join(self.pp(ast.type_expr)),
+                ''.join(self.pp(ast.initialization))]
+        if row[2]:
+            row[1] += ': '
+        if row[3]:
+            row[3] = ' = ' + row[3]
+        if row[-1] == '':
+            if row[-2] == '':
+                row[2] += ';'
+            else:
+                row[3] += ';'
+        else:
+            row[-1] += ';'
+        return row
 
     def as_string(self, ast):
         return ''.join(self.pp(ast))
