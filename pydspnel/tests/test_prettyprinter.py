@@ -25,8 +25,20 @@ def test_epr():
     ast = parse('a.b.c(3, bc, cd)')
     assert pp.as_string(ast) == "a.b.c(3, bc, cd)"
 
-    # ast = parse('(3+4)*b')
-    # assert pp.as_string(ast) == "(3 + 4) * b"
+    ast = parse('(3+4)*b')
+    assert pp.as_string(ast) == "(3 + 4) * b"
+
+    ast = parse('((not a) and b)')
+    assert pp.as_string(ast) == "not a and b"
+
+    ast = parse('not (a and b)')
+    assert pp.as_string(ast) == "not (a and b)"
+
+    ast = parse('(6* 3j).re() == 3')
+    assert pp.as_string(ast) == "(6 * 3j).re() == 3"
+
+    ast = parse("y = x * x';")
+    assert pp.as_string(ast) == "y = x * x';\n"
 
 def test_kernel():
     pp = PrettyPrinter()
@@ -74,10 +86,65 @@ def test_kernel():
 }
 """
 
+    ast = parse("""kernel foo2(
+    a: u32,
+    /// the second parameter                
+    bb: c64,){}""")
+    assert pp.as_string(ast) == """kernel foo2(
+    a: u32,
+    /// the second parameter
+    bb: c64,
+) {
+}
+"""
+
+    ast = parse("""kernel foo2(
+    /// the first parameter
+     a: u32,
+    bb: c64,){}""")
+    assert pp.as_string(ast) == """kernel foo2(
+    /// the first parameter
+     a: u32,
+    bb: c64,
+) {
+}
+"""
+
+    ast = parse("""kernel foo1(x: <c32>, y: <c32>,){
+    // apply gain to input sample
+    y = 3 * x;
+    }""")
+    assert pp.as_string(ast) == """kernel foo1(
+    x: <c32>,
+    y: <c32>,
+) {
+    // apply gain to input sample
+    y = 3 * x;
+}
+"""
+
+    ast = parse("""kernel foo1(x: <c32>, y: <c32>,){
+    // apply gain to input sample
+    y = 3 * x;
+    // not enough
+    y = 2 * y;
+    }""")
+    assert pp.as_string(ast) == """kernel foo1(
+    x: <c32>,
+    y: <c32>,
+) {
+    // apply gain to input sample
+    y = 3 * x;
+    
+    // not enough
+    y = 2 * y;
+}
+"""
+
 def test_stmt():
     pp = PrettyPrinter()
     ast = parse('a += 3 * b;')
     assert pp.as_string(ast) == "a += 3 * b;\n"
 
-    # ast = parse('let a: u32 = 3 * b;')
-    # assert pp.as_string(ast) == "let a: u32 = 3 * b;\n"
+    ast = parse('let a: u32 = 3 * b;')
+    assert pp.as_string(ast) == "let a: u32 = 3 * b;\n"
