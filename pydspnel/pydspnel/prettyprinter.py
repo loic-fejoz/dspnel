@@ -41,12 +41,13 @@ def doc_len(doc):
         l = l + len(str)
     return l
 
-def table(rows, colsfmt, seps=None):
+def table(rows, colsfmt, seps=None, last_nl=True, end=None):
     max_col_width = {}
+    last_index = len(rows) - 1
     for row in rows:
         for j, col in enumerate(row):
             max_col_width[j] = max(max_col_width.get(j, 0), doc_len(col))
-    for row in rows:
+    for i, row in enumerate(rows):
         for (j, col), fmt in zip(enumerate(row), colsfmt):
             if fmt == 'right':
                 yield (max_col_width[j] - doc_len(col)) * ' '
@@ -62,7 +63,10 @@ def table(rows, colsfmt, seps=None):
                     yield seps
                 else:
                     yield seps[j]
-        yield "\n"
+        if i != last_index | last_nl:
+            yield '\n'
+        if i == last_index and end and last_nl:
+            yield end
 
 def layout(doc):
     acc = ""
@@ -174,8 +178,8 @@ class PrettyPrinter:
             return [ast.value]
         elif t == Number:
             return [ast.value]
-        elif t in [Kernel, Function]:
-            d = {Kernel: 'kernel ', Function: 'fn '}
+        elif t in [Kernel, Function, Quickcheck]:
+            d = {Kernel: 'kernel ', Function: 'fn ', Quickcheck: 'quickcheck '}
             return concat(['\n',
                 d[t], ast.name, bracket("(\n",
                     self.pp_parameters(ast.params),
@@ -197,9 +201,19 @@ class PrettyPrinter:
                 ast.attr_name
             ])
         elif t == MethodCall:
-            return concat([
-                self.maybe_paren(self.priority(ast), ast.receiver),
-                '.',
+            if ast.receiver is None:
+                receiver_chunk = []
+            else:
+                receiver_chunk = [
+                    self.maybe_paren(self.priority(ast), ast.receiver),
+                    '.']
+            if ast.method_name == 'pow':
+                if len(ast.args) == 1 and type(ast.args[0]) in [Identifier, Number]:
+                    return concat(receiver_chunk[:-1] + [
+                '^',
+                self.pp(ast.args[0])
+            ])
+            return concat(receiver_chunk + [
                 ast.method_name,
                 '(',
                 sep(', ', [self.pp(a) for a in ast.args]),
@@ -210,8 +224,7 @@ class PrettyPrinter:
         elif t == Comment:
             return concat(['\n', ast.text, '\n'])
         elif t == LetStatement:
-            d = self.pp_letstmt(ast)
-            return concat([concat(d), '\n'])
+            return self.pp_letstmt(ast)
         elif t == Prime:
             return concat([self.maybe_paren(self.priority(ast), ast.inner), "'"])
         elif t == UnaryMinus:
@@ -228,6 +241,8 @@ class PrettyPrinter:
                 return 'return;\n'
         elif t == list:
             return self.pp_list(ast)
+        elif t == Matrix:
+            return self.pp_matrix(ast, last_nl=False)
         else:
             raise BaseException("Unknown type {} '{}'".format(repr(t), asLisp(ast)))
         
@@ -256,22 +271,36 @@ class PrettyPrinter:
         return self.binary_priority.get(ast_type, 0)
 
     def pp_letstmt(self, ast):
+        is_multineline_matrix = type(ast.initialization) == Matrix and len(ast.initialization.rows) > 1
+        if is_multineline_matrix:
+            pp_init = ''
+            semicolon = ''
+        else:
+            pp_init = self.pp(ast.initialization)
+            pp_init = ''.join(pp_init)
+            semicolon = ';'
         row = [ 'let ',
                 ast.variable_name,
                 ''.join(self.pp(ast.type_expr)),
-                ''.join(self.pp(ast.initialization))]
+                pp_init]
         if row[2]:
             row[1] += ': '
         if row[3]:
             row[3] = ' = ' + row[3]
+        if is_multineline_matrix:
+            row[3] = ' ='
         if row[-1] == '':
             if row[-2] == '':
-                row[2] += ';'
+                row[2] += semicolon
             else:
-                row[3] += ';'
+                row[3] += semicolon
         else:
-            row[-1] += ';'
-        return row
+            row[-1] += semicolon
+        if is_multineline_matrix:
+            pp_init = self.pp_matrix(ast.initialization, end=';\n')
+            return concat(row + ['\n', nest(1, pp_init)])
+        else:
+            return concat(row + ['\n'])
 
     def as_string(self, ast):
         return ''.join(self.pp(ast))
@@ -292,14 +321,14 @@ class PrettyPrinter:
                     ])
                     params_sequences = []
                 else:
-                    output = concat([output, param.doc.text.rstrip(), "\n"])
+                    output = concat([output, param.doc.text.rstrip(), '\n'])
             params_sequences.append(self.pp_param(param))
         if len(params_sequences) != 0:
             output = concat([
                         output,
                         rstrip(table(params_sequences,
                             colsfmt=['left', 'right', 'left', 'left'],
-                            seps=['', '', '', ''])),
+                            seps=['', '', '', '']))
                     ])
         return output
 
@@ -326,3 +355,22 @@ class PrettyPrinter:
         else:
             row[3] = row[3].rstrip() + ','
         return row
+    
+    def pp_matrix(self, ast, last_nl=True, end='\n'):
+        use_iterable = any(map(lambda x: isinstance(x, RowIter), ast.rows))
+        if use_iterable:
+            raise BaseException("TODO")
+        content = []
+        width = 0
+        for row in ast.rows:
+            line_content = ['']
+            for expr in row.expr_list:
+                line_content.append(self.as_string(expr))
+            line_content.append(';')
+            content.append(line_content)
+            width = max(width, len(line_content))
+        colsfmt = ['right'] * width
+        seps = [''] + [', '] * (width-3) + ['', '']
+        content[0][0] = '['
+        content[-1][-1] = ']'
+        return table(content, colsfmt, seps, last_nl=last_nl, end=end)

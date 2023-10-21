@@ -40,6 +40,21 @@ def test_expr():
     ast = parse("y = x * x';")
     assert pp.as_string(ast) == "y = x * x';\n"
 
+    ast = parse('foo()')
+    assert pp.as_string(ast) == "foo()"
+
+    ast = parse('a.pow(2)')
+    assert pp.as_string(ast) == "a^2"
+
+    ast = parse('a.pow(x)')
+    assert pp.as_string(ast) == "a^x"
+
+    ast = parse('(a * b).pow(2)')
+    assert pp.as_string(ast) == "(a * b)^2"
+
+    ast = parse('a.pow(2 * x)')
+    assert pp.as_string(ast) == "a.pow(2 * x)"
+
 def test_kernel():
     pp = PrettyPrinter()
     ast = [Kernel('AGC', params=[], block=Block([]))]
@@ -229,3 +244,25 @@ def test_param():
 
     ast = Parameter('bb', Identifier('freq'), initialization=Number('45'))
     assert pp.pp_param(ast) == ['', 'bb: ', 'freq ', '= 45,']
+
+def test_matrix():
+    pp = PrettyPrinter()
+
+    ast = parse("[1, 2, 3, 4, 5, 6]")
+    assert pp.as_string(ast) == """[1, 2, 3, 4, 5, 6]"""
+
+    ast = parse("a = [1, 2, 3, 4, 5, 6];")
+    assert pp.as_string(ast) == """a = [1, 2, 3, 4, 5, 6];\n"""
+
+    ast = parse("[1, 2, 3; 4, 5, 6]")
+    assert pp.as_string(ast) == """[1, 2, 3;
+ 4, 5, 6]"""
+
+    ast = parse("let a = [1, 2, 3; 4, 5, 6];")
+    assert pp.as_string(ast) == """let a =
+    [1, 2, 3;
+     4, 5, 6];
+"""
+
+    ast = parse("let a = [1, 2, 3];")
+    assert pp.as_string(ast) == """let a = [1, 2, 3];\n"""

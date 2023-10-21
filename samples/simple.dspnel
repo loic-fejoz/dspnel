@@ -1,25 +1,24 @@
 let a_vector = [2.0, 1.0];
-
-let another_vector = [2.0;
-                      1.0];
-let a_matrix = [1.0, 2.0;
-                3.0, 4.0];
+let another_vector =
+    [2.0;
+     1.0];
+let a_matrix =
+    [1.0, 2.0;
+     3.0, 4.0];
 let a_float32: f32 = 1.2;
 
 kernel simplest_iir_low_pass_filter(
     in      x: <f32>,
-        alpha: f32  ,
+        alpha: f32,
     out     y: <f32>,
 ) {
-
     y = alpha * x + (1 - alpha) * x'; // this is a comment
 }
 
 kernel to_qpsk(
-    in  symbols: <u2> ,
+    in  symbols: <u2>,
     out      iq: <c32>,
 ) {
-
     let in_degrees = symbols * 360.0 / 4.0 + 45;
     let in_radians = in_degrees * pi / 180.0;
     iq = in_radians.cos() + 1j * in_radians.sin();
@@ -32,14 +31,13 @@ kernel mag_phase(
     out   mag: f32,
     out phase: f32,
 ) {
-
     mag = (iq.re()^2 + iq.im()^2).sqrt(); // ^2 is syntax sugar for .pow(2)
     phase = (iq.im() / iq.re()).arctan();
 }
 
 kernel example1(
-    in  a:       <c32>,
-    out abs_a:   <f32>,
+    in        a: <c32>,
+    out   abs_a: <f32>,
     out ejalpha: <f32>,
 )
 ensures
@@ -54,5 +52,6 @@ ensures
 
 
 quickcheck example1_always_positive(in a: <u32>,) {
-    return a | example1().abs_a >= 0;
+    let flowgraph = a | example1();
+    assert(flowgraph.abs_a >= 0);
 }
