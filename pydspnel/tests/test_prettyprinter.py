@@ -2,7 +2,7 @@ from pydspnel.ast import *
 from pydspnel.prettyprinter import PrettyPrinter
 from pydspnel import parse
 
-def test_epr():
+def test_expr():
     pp = PrettyPrinter()
     ast = parse('3 *b')
     assert pp.as_string(ast) == "3 * b"
@@ -42,7 +42,7 @@ def test_epr():
 
 def test_kernel():
     pp = PrettyPrinter()
-    ast = Kernel('AGC', params=[], block=Block([]))
+    ast = [Kernel('AGC', params=[], block=Block([]))]
     assert pp.as_string(ast) == """kernel AGC(
 ) {
 }
@@ -51,20 +51,20 @@ def test_kernel():
     ast = Kernel('AGC', params=[], block=Block([
         Assignment('a', Identifier('b'))
     ]))
-    assert pp.as_string(ast) == """kernel AGC(
+    assert pp.as_string(ast) == """\nkernel AGC(
 ) {
     a = b;
 }
 """
     ast = parse('kernel foo1(a: u32,){}')
-    assert pp.as_string(ast) == """kernel foo1(
+    assert pp.as_string(ast) == """\nkernel foo1(
     a: u32,
 ) {
 }
 """
 
     ast = parse('kernel foo2(a: u32, bb: c64,){}')
-    assert pp.as_string(ast) == """kernel foo2(
+    assert pp.as_string(ast) == """\nkernel foo2(
      a: u32,
     bb: c64,
 ) {
@@ -72,14 +72,14 @@ def test_kernel():
 """
 
     ast = parse('kernel foo3(a: u32, bb: c64 = 0.0,){}')
-    assert pp.as_string(ast) == """kernel foo3(
+    assert pp.as_string(ast) == """\nkernel foo3(
      a: u32,
     bb: c64 = 0.0,
 ) {
 }
 """
     ast = parse('kernel foo3(a: u32, in bb: c64 = 0.0,){}')
-    assert pp.as_string(ast) == """kernel foo3(
+    assert pp.as_string(ast) == """\nkernel foo3(
         a: u32,
     in bb: c64 = 0.0,
 ) {
@@ -90,7 +90,7 @@ def test_kernel():
     a: u32,
     /// the second parameter                
     bb: c64,){}""")
-    assert pp.as_string(ast) == """kernel foo2(
+    assert pp.as_string(ast) == """\nkernel foo2(
     a: u32,
     /// the second parameter
     bb: c64,
@@ -102,10 +102,34 @@ def test_kernel():
     /// the first parameter
      a: u32,
     bb: c64,){}""")
-    assert pp.as_string(ast) == """kernel foo2(
+    assert pp.as_string(ast) == """\nkernel foo2(
     /// the first parameter
      a: u32,
     bb: c64,
+) {
+}
+"""
+
+    ast = parse("""kernel foo2(
+    /// the first parameter
+     a: u32 = 3,
+    bb: c64,){}""")
+    assert pp.as_string(ast) == """\nkernel foo2(
+    /// the first parameter
+     a: u32 = 3,
+    bb: c64,
+) {
+}
+"""
+
+    ast = parse("""kernel foo2(
+    /// the first parameter
+     a: u32 = 3,
+    bb: freq = 45,){}""")
+    assert pp.as_string(ast) == """\nkernel foo2(
+    /// the first parameter
+     a: u32  = 3,
+    bb: freq = 45,
 ) {
 }
 """
@@ -114,7 +138,7 @@ def test_kernel():
     // apply gain to input sample
     y = 3 * x;
     }""")
-    assert pp.as_string(ast) == """kernel foo1(
+    assert pp.as_string(ast) == """\nkernel foo1(
     x: <c32>,
     y: <c32>,
 ) {
@@ -129,7 +153,7 @@ def test_kernel():
     // not enough
     y = 2 * y;
     }""")
-    assert pp.as_string(ast) == """kernel foo1(
+    assert pp.as_string(ast) == """\nkernel foo1(
     x: <c32>,
     y: <c32>,
 ) {
@@ -148,3 +172,60 @@ def test_stmt():
 
     ast = parse('let a: u32 = 3 * b;')
     assert pp.as_string(ast) == "let a: u32 = 3 * b;\n"
+
+    ast = parse('a += 3 * b;\n b = 3 * a;')
+    assert pp.as_string(ast) == "a += 3 * b;\nb = 3 * a;\n"
+
+    ast = parse('a += 3 * b;\na.debug();b = 3 * a;')
+    assert pp.as_string(ast) == "a += 3 * b;\na.debug();\nb = 3 * a;\n"
+
+def test_function():
+    pp = PrettyPrinter()
+    ast = [Function('AGC', params=[], block=Block([]))]
+    assert pp.as_string(ast) == """fn AGC(
+) {
+}
+"""
+
+    ast = [Function('foo', params=[], block=Block([])), Function('bar', params=[], block=Block([]))]
+    assert pp.as_string(ast) == """fn foo(
+) {
+}
+
+fn bar(
+) {
+}
+"""
+
+    ast = parse("""
+fn cosine(
+          sample_rate: samprate,
+                 freq: freq,
+            amplitude: f64,
+               offset: f64   = 0,
+        initial_phase: phase = 0,
+    out             y: <f64>,
+) {
+    
+}
+                """)
+    assert pp.as_string(ast) == """
+fn cosine(
+          sample_rate: samprate,
+                 freq: freq,
+            amplitude: f64,
+               offset: f64      = 0,
+        initial_phase: phase    = 0,
+    out             y: <f64>,
+) {
+}
+"""
+
+def test_param():
+    pp = PrettyPrinter()
+
+    ast = Parameter('a', Identifier('u32'), initialization=Number('3'))
+    assert pp.pp_param(ast) == ['', 'a: ', 'u32 ', '= 3,']
+
+    ast = Parameter('bb', Identifier('freq'), initialization=Number('45'))
+    assert pp.pp_param(ast) == ['', 'bb: ', 'freq ', '= 45,']

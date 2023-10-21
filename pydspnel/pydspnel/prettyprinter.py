@@ -174,9 +174,10 @@ class PrettyPrinter:
             return [ast.value]
         elif t == Number:
             return [ast.value]
-        elif t == Kernel:
-            return concat([
-                'kernel ', ast.name, bracket("(\n",
+        elif t in [Kernel, Function]:
+            d = {Kernel: 'kernel ', Function: 'fn '}
+            return concat(['\n',
+                d[t], ast.name, bracket("(\n",
                     self.pp_parameters(ast.params),
                 ") "),
                 bracket("{\n",
@@ -226,14 +227,20 @@ class PrettyPrinter:
             else:
                 return 'return;\n'
         elif t == list:
-            self.pp_list(ast)
+            return self.pp_list(ast)
         else:
             raise BaseException("Unknown type {} '{}'".format(repr(t), asLisp(ast)))
         
     def pp_list(self, stmts):
-        pp_stmts = [self.pp(stmt) for  stmt in stmts]
+        pp_stmts = []
+        for stmt in stmts:
+            pp = self.pp(stmt)
+            if isinstance(stmt, Statement) or isinstance(stmt, Comment):
+                pp_stmts.append(pp)
+            else:
+                pp_stmts.append(concat([pp, ';', '\n']))
         result = concat(pp_stmts)
-        if len(stmts) > 0 and type(stmts[0]) == Comment:
+        if len(stmts) > 0 and type(stmts[0]) in [Comment, Kernel, Function]:
             result = skip(1, result)
         return result
 
@@ -309,12 +316,13 @@ class PrettyPrinter:
         if row[2]:
             row[1] += ': '
         if row[3]:
-            row[3] = ' = ' + row[3]
-        if row[-1] == '':
-            if row[-2] == '':
-                row[2] += ','
+            row[2] += ' '
+            row[3] = '= ' + row[3]
+        if row[3].rstrip() == '':
+            if row[2].rstrip() == '':
+                row[1] = row[1].rstrip() + ','
             else:
-                row[3] += ','
+                row[2] = row[2].rstrip() + ','
         else:
-            row[-1] += ','
+            row[3] = row[3].rstrip() + ','
         return row
