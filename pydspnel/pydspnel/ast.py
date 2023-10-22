@@ -139,6 +139,7 @@ class BitNegation(UnaryOp):
     pass
 
 class Row(BaseBox):
+    __fields = ['expr_list']
     def __init__(self, expr_list):
         super().__init__()
         if expr_list:
@@ -150,6 +151,7 @@ class Row(BaseBox):
         return '(Row {})'.format(' '.join([expr.asLisp() for expr in self.expr_list]))
 
 class RowIter(BaseBox):
+    _fields= ['expr', 'identifier', 'start', 'stop']
     def __init__(self, expr, identifier, start, stop):
         super().__init__()
         if expr:
@@ -168,6 +170,7 @@ class RowIter(BaseBox):
             self.stop.asLisp())
 
 class Matrix(BaseBox):
+    _fields = ['rows']
     def __init__(self, rows):
         super().__init__()
         self.rows = rows
@@ -261,6 +264,7 @@ class SubAssignment(Assignment):
         super().__init__(variable_name, expr, 'Sub')
 
 class Block(BaseBox):
+    _fields = ['stmts']
     def __init__(self, stmts):
         super().__init__()
         self.stmts = stmts
@@ -270,6 +274,7 @@ class Block(BaseBox):
         return "(Block {})".format(stmts)
     
 class ProtoFunction(Statement):
+    _fields = ['params', 'block', 'assumptions', 'guarantees']
     def __init__(self, name, params, block, assumptions=None, guarantees=None):
         self.name = name
         self.params = params
@@ -294,6 +299,7 @@ class Quickcheck(ProtoFunction):
     prefix = 'Quickcheck'
   
 class Parameter(BaseBox):
+    _fields = ['type_expr', 'initialization', 'qualifier']
     def __init__(self, variable_name, type_expr=None, initialization=None, qualifier=None):
         super().__init__()
         self.variable_name = variable_name
@@ -308,6 +314,7 @@ class Parameter(BaseBox):
         return "(Param {} {} {} {})".format(self.variable_name, type_expr, init, qualif)
     
 class Stream(BaseBox):
+    _fields = ['inner_type']
     def __init__(self, inner_type):
         super().__init__()
         self.inner = inner_type
@@ -316,6 +323,7 @@ class Stream(BaseBox):
         return "(Stream {})".format(self.inner.asLisp())  
     
 class ArrayOf(BaseBox):
+    _fields = ['inner', 'size']
     def __init__(self, inner_type, size):
         super().__init__()
         self.inner = inner_type
@@ -325,6 +333,7 @@ class ArrayOf(BaseBox):
         return "(ArrayOf {} {})".format(self.inner.asLisp(), asLisp(self.size))  
     
 class ReturnStatement(Statement):
+    _fields = ['expr']
     def __init__(self, expr=None):
         super().__init__()
         self.expr = expr

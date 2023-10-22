@@ -1,3 +1,6 @@
+from _ast import Return
+from ast import Param
+from typing import Any
 from pydspnel.ast import *
 from pydspnel.transformer import AstTransformer
 import ast
@@ -42,6 +45,22 @@ class ToPython(AstTransformer):
     def visit_UnaryMinus(self, tree):
         tree = self.generic_visit(tree)
         return ast.UnaryOp(operand=tree.inner, op=ast.USub())
+    
+    def visit_ReturnStatement(self, node: ReturnStatement) -> ast.Return:
+        if node.expr:
+            expr = self.visit(node.expr)
+            return ast.Return(expr)
+        else:
+            return ast.Return()
+        
+    def visit_Parameter(self, node: Parameter) -> Any:
+        return ast.arg(arg=node.variable_name)
+    
+    def visit_Function(self, tree):
+        stmts = [self.visit(stmt) for stmt in tree.block.stmts]
+        params = [self.visit(param) for param in (tree.params or [])]
+        params = ast.arguments(posonlyargs=[], args=params, kwonlyargs=[], defaults=[])
+        return ast.FunctionDef(tree.name, params, body=stmts, decorator_list=[], returns=None)
 
     def unparse(self, tree):
         ast_python = self.visit(tree)

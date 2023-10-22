@@ -48,3 +48,14 @@ def test_to_python():
     ast_dspnel = parse("y = x * np.exp((-2j) * np.pi * target_freq * np.arange(streams_length) / x_sample_rate);")
     tgt_python = topy.unparse(ast_dspnel)
     assert tgt_python == 'y = x * np.exp(-2j * np.pi * target_freq * np.arange(streams_length) / x_sample_rate)'
+
+def test_function_to_python():
+    topy = ToPython()
+
+    ast_dspnel = parse("fn foo() { return 10;}")
+    tgt_python = topy.unparse(ast_dspnel)
+    assert tgt_python == "def foo():\n    return 10"
+
+    ast_dspnel = parse("fn foo(a: u32, b: c64,) { return (a+b);}")
+    tgt_python = topy.unparse(ast_dspnel)
+    assert tgt_python == "def foo(a, b):\n    return a + b"
