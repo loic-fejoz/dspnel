@@ -12,6 +12,7 @@ def asLisp(v):
     return v.asLisp()
 
 class Number(BaseBox):
+    _fields = []
     def __init__(self, value):
         super().__init__()
         self.value = value
@@ -20,6 +21,7 @@ class Number(BaseBox):
         return str(self.value)
     
 class Identifier(BaseBox):
+    _fields = []
     def __init__(self, value):
         super().__init__()
         self.value = value
@@ -28,6 +30,7 @@ class Identifier(BaseBox):
         return str(self.value)
     
 class Comment(BaseBox):
+    _fields = []
     def __init__(self, text):
         super().__init__()
         self.text = text
@@ -40,6 +43,8 @@ class Expression(BaseBox):
         super().__init__()
 
 class BinaryOp(Expression):
+    _fields = ['left', 'right']
+
     def __init__(self, left, right):
         super().__init__()
         self.left = left
@@ -112,6 +117,8 @@ class BitShiftRight(BinaryOp):
     pass
 
 class UnaryOp(Expression):
+    _fields = ['inner']
+
     def __init__(self, inner):
         super().__init__()
         self.inner = inner
@@ -169,6 +176,8 @@ class Matrix(BaseBox):
         return '(Matrix {})'.format(' '.join([row.asLisp() for row in self.rows]))
     
 class MethodCall(Expression):
+    _fields = ['receiver', 'args', 'named_args']
+
     def __init__(self, method_name, receiver, args, named_args=None):
         super().__init__()
         self.method_name = method_name
@@ -183,6 +192,8 @@ class MethodCall(Expression):
         return "(MethodCall {} {} ({}){})".format(self.method_name, receiver, args, named_args)
     
 class ConditionalExpression(Expression):
+    _fields = ['condition', 'then_expr', 'else_expr']
+
     def __init__(self, condition, then_expr, else_expr=None):
         super().__init__()
         self.condition = condition
@@ -197,6 +208,8 @@ class ConditionalExpression(Expression):
 
 
 class GetAttribute(Expression):
+    _fields = ['receiver']
+
     def __init__(self, attr_name, receiver):
         super().__init__()
         self.attr_name = attr_name
@@ -210,6 +223,7 @@ class Statement(BaseBox):
         super().__init__()
 
 class LetStatement(Statement):
+    _fields = ['type_expression', 'initialization']
     def __init__(self, variable_name, type_expr=None, initialization=None):
         super().__init__()
         self.variable_name = variable_name
@@ -222,6 +236,8 @@ class LetStatement(Statement):
         return "(LetStatement {} {} {})".format(self.variable_name, type_expr, init)
     
 class Assignment(Statement):
+    _fields = ['expr']
+
     def __init__(self, variable_name, expr, prefix=None):
         super().__init__()
         self.variable_name = variable_name
