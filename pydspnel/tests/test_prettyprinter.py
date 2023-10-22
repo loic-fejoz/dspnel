@@ -235,6 +235,21 @@ fn cosine(
 ) {
 }
 """
+    ast = parse("""fn foo(T: Type, in x: <T>, out y: <T>,) requires T < number ensures y > 0 { y = x.abs(); }""")
+    assert pp.as_string(ast) == """
+fn foo(
+        T: Type,
+    in  x: <T>,
+    out y: <T>,
+)
+requires
+    T < number
+ensures
+    y > 0
+{
+    y = x.abs();
+}
+"""
 
 def test_param():
     pp = PrettyPrinter()

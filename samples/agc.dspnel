@@ -1,3 +1,4 @@
+
 kernel AGC(
     /// output scale value
     scale: f32 = 1.0,
@@ -6,30 +7,28 @@ kernel AGC(
     /// current gain value
     state g: f32 = 1.0,
     /// AGC locked flag
-    state is_locked: bool ,
+    state is_locked: bool,
     in            x: <c32>,
     out           y: <c32>,
 ) {
     // apply gain to input sample
     y = x * g;
-
+    
     // compute output signal energy
     let y2 = (y * y.conj()).re();
-
+    
     // smooth energy estimate using single-pole low-pass filter
     let smoothed_energy_estimate = (1.0 - alpha) * y2' + alpha * y2;
-
     if is_locked {
         return;
     }
-
+    
     // update gain according to output energy
     if smoothed_energy_estimate > 1e-6 {
         g *= (-0.5 * alpha * smoothed_energy_estimate.log()).exp();
     }
-
+    
     // clamp to 120 dB gain
     g = g.min(1e6);
-
     y *= scale;
 }

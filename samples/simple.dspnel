@@ -12,7 +12,8 @@ kernel simplest_iir_low_pass_filter(
         alpha: f32,
     out     y: <f32>,
 ) {
-    y = alpha * x + (1 - alpha) * x'; // this is a comment
+    // this is a comment
+    y = alpha * x + (1 - alpha) * x';
 }
 
 kernel to_qpsk(
@@ -23,7 +24,6 @@ kernel to_qpsk(
     let in_radians = in_degrees * pi / 180.0;
     iq = in_radians.cos() + 1j * in_radians.sin();
 }
-
 let k2 = to_qpsk() | simplest_iir_low_pass_filter(0.5);
 
 kernel mag_phase(
@@ -31,7 +31,8 @@ kernel mag_phase(
     out   mag: f32,
     out phase: f32,
 ) {
-    mag = (iq.re()^2 + iq.im()^2).sqrt(); // ^2 is syntax sugar for .pow(2)
+    // ^2 is syntax sugar for .pow(2)
+    mag = (iq.re()^2 + iq.im()^2).sqrt();
     phase = (iq.im() / iq.re()).arctan();
 }
 
@@ -43,15 +44,15 @@ kernel example1(
 ensures
     abs_a >= 0
 {
-
-    let a_sqr = a.re().pow(2) + a.im().pow(2);
+    let a_sqr = a.re()^2 + a.im()^2;
     let oneOverAbs_a = 1 / a_sqr.sqrt();
     abs_a = a_sqr * oneOverAbs_a;
     ejalpha = a / oneOverAbs_a;
 }
 
-
-quickcheck example1_always_positive(in a: <u32>,) {
+quickcheck example1_always_positive(
+    in a: <u32>,
+) {
     let flowgraph = a | example1();
     assert(flowgraph.abs_a >= 0);
 }

@@ -180,10 +180,24 @@ class PrettyPrinter:
             return [ast.value]
         elif t in [Kernel, Function, Quickcheck]:
             d = {Kernel: 'kernel ', Function: 'fn ', Quickcheck: 'quickcheck '}
+            if ast.assumptions or ast.guarantees:
+                end_param = concat([')', '\n'])
+            else:
+                end_param = ') '
+            if ast.assumptions:
+                assumptions = concat(['requires', '\n', nest(1, self.pp_bool_expr(ast.assumptions))])
+            else:
+                assumptions = ''
+            if ast.guarantees:
+                guarantees = concat(['ensures', '\n', nest(1, self.pp_bool_expr(ast.guarantees))])
+            else:
+                guarantees = ''
             return concat(['\n',
                 d[t], ast.name, bracket("(\n",
                     self.pp_parameters(ast.params),
-                ") "),
+                end_param),
+                assumptions,
+                guarantees,
                 bracket("{\n",
                     self.pp(ast.block),
                 "}\n")])
@@ -250,13 +264,23 @@ class PrettyPrinter:
         pp_stmts = []
         for stmt in stmts:
             pp = self.pp(stmt)
-            if isinstance(stmt, Statement) or isinstance(stmt, Comment):
+            if isinstance(stmt, Statement) or isinstance(stmt, Comment) or isinstance(stmt, ConditionalExpression):
                 pp_stmts.append(pp)
             else:
                 pp_stmts.append(concat([pp, ';', '\n']))
         result = concat(pp_stmts)
         if len(stmts) > 0 and type(stmts[0]) in [Comment, Kernel, Function]:
             result = skip(1, result)
+        return result
+
+    def pp_bool_expr(self, stmts):
+        pp_stmts = []
+        for stmt in stmts:
+            pp = self.pp(stmt)
+            pp_stmts.extend([pp, ',', '\n'])
+        pp_stmts = pp_stmts[:-2]
+        pp_stmts.append('\n')
+        result = concat(pp_stmts)
         return result
 
     def maybe_paren(self, outer_priority, ast):
