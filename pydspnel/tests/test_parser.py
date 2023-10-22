@@ -69,8 +69,10 @@ def test_expr():
     assert ast == '(Prime a)'
 
     ast = parse('foo(a, b)')
-    ast = ast.asLisp()
-    assert ast == '(MethodCall foo () (a b))'
+    lsp = ast.asLisp()
+    assert lsp == '(MethodCall foo () (a b))'
+    assert len(ast.args) ==  2
+
 
     # ast = parse('b.foo(arg1: a)')
     # ast = ast.asLisp()
