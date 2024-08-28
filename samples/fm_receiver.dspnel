@@ -4,8 +4,9 @@ kernel fm_receiver(
     in x: <c64>,
     out y: <i16>,
 ) {
+    let sample_rate = x@sample_rate;
     let x = if target_freq {
-        x * (-2j * pi * target_freq * streams.range() / x.sample_rate).exp();
+        x * (-2j * pi * target_freq * streams.range() / sample_rate).exp();
     } else {
         x
     };

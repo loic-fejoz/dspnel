@@ -213,13 +213,16 @@ class ConditionalExpression(Expression):
 class GetAttribute(Expression):
     _fields = ['receiver']
 
-    def __init__(self, attr_name, receiver):
+    def __init__(self, attr_name, receiver, is_meta=False):
         super().__init__()
         self.attr_name = attr_name
         self.receiver = receiver
+        self.is_meta = is_meta
 
     def asLisp(self):
-        return "(GetAttr {} {})".format(self.attr_name, self.receiver.asLisp())    
+        if self.is_meta:
+            return "(GetAttr {} {} meta)".format(self.attr_name, self.receiver.asLisp())
+        return "(GetAttr {} {})".format(self.attr_name, self.receiver.asLisp())
 
 class Statement(BaseBox):
     def __init__(self):

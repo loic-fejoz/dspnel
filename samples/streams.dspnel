@@ -1,4 +1,4 @@
-fn range(
+kernel range(
             start: T   = 0,
              step: T   = 1,
     state current: T   = start,
@@ -8,7 +8,7 @@ fn range(
     current += step;
 }
 
-fn cosine(
+kernel cosine(
           sample_rate: samprate,
                  freq: freq,
             amplitude: f64,
@@ -16,4 +16,6 @@ fn cosine(
         initial_phase: phase    = 0,
     out             y: <f64>,
 ) {
+    let signal = offset + amplitude * freq.phase(phase).sample(sample_rate);
+    y = signal.re();
 }

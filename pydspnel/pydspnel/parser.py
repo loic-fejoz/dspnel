@@ -7,12 +7,12 @@ pg = ParserGenerator(
      'PLUS', 'MINUS', 'MUL', 'DIV',
      'OPEN_SQBRACKET', 'CLOSE_SQBRACKET', 'COMMA',
      'SEMICOLON', 'FOR', 'IN', 'OUT', 'RANGE',
-     'IDENTIFIER', 'DOT', 'LET', 'DDOTS', 'EQUALS',
+     'IDENTIFIER', 'DOT', 'META_DOT', 'LET', 'DDOTS', 'EQUALS',
      'IF', 'ELSE', 'OPEN_BRACKETS', 'CLOSE_BRACKETS',
      'KERNEL', 'STATE', 'LT', 'GT', 'GEQ', 'LEQ', 'FUNCTION', 'RETURN',
      'REQUIRES', 'ENSURES', 'MUL_ASSIGN', 'SUB_ASSIGN', 'ADD_ASSIGN',
      'DEQUALS', 'DIFFERENT', 'IMPLY', 'XOR', 'OR', 'AND', 'NOT', 'MODULO',
-     'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'QUICKCHECK', 'PIPE', 'AMPERSAND',
+     'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'PIPE', 'AMPERSAND',
      'BTLEFT', 'BTRIGHT', 'BITNEG', 'OPEN_SQBRACKET', 'CLOSE_SQBRACKET'
     ],
     # A list of precedence rules with ascending precedence, to
@@ -33,7 +33,7 @@ pg = ParserGenerator(
         ('right', ['BITNEG']),
         ('right', ['POW']),
         ('right', ['PRIME']),
-        ('left', ['DOT']),
+        ('left', ['DOT', 'META_DOT']),
         ('left', ['OPEN_PARENS']),
     ]
 )
@@ -55,13 +55,6 @@ def statement_comment(p):
 
 @pg.production('optional_comment : COMMENT')
 @pg.production('optional_comment : ')
-def optional_comment(p):
-    if len(p) == 0:
-        return None
-    return Comment(p[0].getstr())
-
-@pg.production('optional_doccomment : DOCCOMMENT')
-@pg.production('optional_doccomment : ')
 def optional_comment(p):
     if len(p) == 0:
         return None
@@ -94,10 +87,6 @@ def fn_qualif(p):
 def kernel_qualif(p):
     return Kernel
 
-@pg.production('protofunction : QUICKCHECK')
-def quickcheck_qualif(p):
-    return Quickcheck
-
 @pg.production('assumptions : REQUIRES expression_list')
 @pg.production('assumptions : ')
 def assumptions(p):
@@ -112,10 +101,34 @@ def guarantees(p):
         return []
     return p[1]
 
-@pg.production('stmt : optional_doccomment protofunction IDENTIFIER OPEN_PARENS parameters_list CLOSE_PARENS assumptions guarantees block')
+@pg.production('optional_doccomment : DOCCOMMENT')
+@pg.production('optional_doccomment : ')
+def optional_comment(p):
+    if len(p) == 0:
+        return None
+    return Comment(p[0].getstr())
+
+@pg.production('optional_decorators_list : optional_decorators_list decorator')
+@pg.production('optional_decorators_list : ')
+def decorators_list(p):
+    if len(p) == 0:
+        return []
+    return p[0] + [ p[1] ]
+
+@pg.production('decorator : META_DOT IDENTIFIER')
+def decorator(p):
+    return p[1]
+
+@pg.production('decorator : DOCCOMMENT')
+def decorator_comment(p):
+    return Comment(p[0].getstr())
+
+@pg.production('stmt : optional_decorators_list protofunction IDENTIFIER OPEN_PARENS parameters_list CLOSE_PARENS assumptions guarantees block')
 def statement_kernel(p):
     protofunc = p[1](p[2].getstr(), p[4], p[8], p[6], p[7])
-    protofunc.doc = p[0]
+    if len(p[0]) > 0 and type(p[0][-1]) == Comment:
+        protofunc.doc = p[0][-1]
+    protofunc.decorators = p[1]
     return protofunc
 
 @pg.production('parameters_list : optional_doccomment parameter COMMA optional_comment parameters_list')
@@ -408,6 +421,10 @@ def expression_functioncall(p):
 @pg.production('expression : expression DOT IDENTIFIER')
 def expression_getattr(p):
     return GetAttribute(p[2].getstr(), p[0])
+
+@pg.production('expression : expression META_DOT IDENTIFIER')
+def expression_getattr(p):
+    return GetAttribute(p[2].getstr(), p[0], True)
 
 @pg.production('block : OPEN_BRACKETS optional_stmts_list CLOSE_BRACKETS')
 def block(p):

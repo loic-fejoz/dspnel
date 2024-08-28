@@ -64,6 +64,10 @@ def test_expr():
     ast = ast.asLisp()
     assert ast == '(MethodCall foo (GetAttr b a) ())'
 
+    ast = parse('a@b.foo()')
+    ast = ast.asLisp()
+    assert ast == '(MethodCall foo (GetAttr b a meta) ())'
+
     ast = parse("a'")
     ast = ast.asLisp()
     assert ast == '(Prime a)'
@@ -72,6 +76,11 @@ def test_expr():
     lsp = ast.asLisp()
     assert lsp == '(MethodCall foo () (a b))'
     assert len(ast.args) ==  2
+
+    # ast = parse('foo(arg1: a, b)')
+    # lsp = ast.asLisp()
+    # assert lsp == '(MethodCall foo () (a b))'
+    # assert len(ast.args) ==  2
 
 
     # ast = parse('b.foo(arg1: a)')
@@ -295,10 +304,23 @@ def test_statement():
     assert ast == '(Fn A ((Param a u32 () ())) (Block (Return a)) ((GreaterThan a 10) (LessEquals a 20)) ())'  
 
     ast = parse("""
-quickcheck a_is_always_positive(in a: <u32>,) {
-    return a() >= 0;
+    @quickcheck
+    fn A(
+        a: u32,
+    ){
+        return a > 0;
+    }""")
+    ast = ast.asLisp()
+    assert ast == '(Fn A ((Param a u32 () ())) (Block (Return (GreaterThan a 0))) () ())'
+
+    ast = parse("""
+@quickcheck
+kernel a_is_always_positive(in a: <u32>,) {
+    return a >= 0;
 }
     """)
+    ast = ast.asLisp()
+    assert ast == '(Kernel a_is_always_positive ((Param a (Stream u32) () in)) (Block (Return (GreaterEquals a 0))) () ())'
 
 
 def test_typeexpr():

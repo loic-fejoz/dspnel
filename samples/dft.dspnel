@@ -107,11 +107,12 @@ fn twiddle(N: usize, s: u32)
 assert twiddle(2, 2) == [1, 0, 0, 0;
                          0, 1, 0, 0;
                          0, 0, 1, 0;
-                         0, 0, 0, -1j]
+                         0, 0, 0, -1j];
 
 
 /// Cooley-Tukey Fast Fourier Transform
-quickcheck CooleyTukey(q: usize, s: usize)
+@quickcheck
+fn CooleyTukey(q: usize, s: usize): bool
 {
     let DFT_qs = DFT(q * s);
     let DFT_q = DFT(q);

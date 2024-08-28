@@ -7,7 +7,7 @@ Because I am learning and experimenting with Software Defined Radio (SDR), I was
 
 The goal is thus to have a DSL to:
 * express actual graphs and kernels,
-* visualize graphs as one may found them in text book,
+* visualize graphs as one may found them in text books,
 * apply some transformations and optimizations on graphs,
 * generate code in targetted languages.
 

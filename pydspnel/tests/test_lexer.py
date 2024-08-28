@@ -119,6 +119,9 @@ def test_expr():
     tokens = [tk.name for tk in lexer.lex("a ==> b")]
     assert(tokens == ['IDENTIFIER', 'IMPLY', 'IDENTIFIER'])
 
+    tokens = [tk.name for tk in lexer.lex("a@b.foo()")]
+    assert(tokens == ['IDENTIFIER', 'META_DOT', 'IDENTIFIER', 'DOT', 'IDENTIFIER', 'OPEN_PARENS', 'CLOSE_PARENS'])
+
 
 def test_kernel():
     tokens = [tk.name for tk in lexer.lex("kernel A(){}")]

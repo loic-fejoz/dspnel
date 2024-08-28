@@ -50,7 +50,8 @@ ensures
     ejalpha = a / oneOverAbs_a;
 }
 
-quickcheck example1_always_positive(
+@quickcheck
+kernel example1_always_positive(
     in a: <u32>,
 ) {
     let flowgraph = a | example1();

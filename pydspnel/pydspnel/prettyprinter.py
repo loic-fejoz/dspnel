@@ -211,7 +211,7 @@ class PrettyPrinter:
         elif t == GetAttribute:
             return concat([
                 self.maybe_paren(self.priority(ast), ast.receiver),
-                '.',
+                (not ast.is_meta and '.') or '@',
                 ast.attr_name
             ])
         elif t == MethodCall:

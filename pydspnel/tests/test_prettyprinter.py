@@ -16,6 +16,9 @@ def test_expr():
     ast = parse('a.b')
     assert pp.as_string(ast) == "a.b"
 
+    ast = parse('a@b')
+    assert pp.as_string(ast) == "a@b"
+
     ast = parse('a.b()')
     assert pp.as_string(ast) == "a.b()"
 
