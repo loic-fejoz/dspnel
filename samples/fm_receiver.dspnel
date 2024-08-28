@@ -13,7 +13,7 @@ kernel fm_receiver(
     // Low pass filter to isolate FM signal
     let h = fir.window(101, cutoff: 150e3, fs: sample_rate);
     x = x.convolve(h);
-    x = x.resample_poly(10, (sample_rate/500e3*10).as(usize)) // target 500kHz
+    x = x.resample_poly(10, (sample_rate/500e3*10).as(usize)); // target 500kHz
 
     //let phase := y * (y').conj();
     x = x.phase().unwrap().diff();

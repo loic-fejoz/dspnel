@@ -142,7 +142,8 @@ def params_list(p):
 
 @pg.production('parameter : param_qualifier IDENTIFIER type_expr_or_empty initialization_expr')
 def statement_let(p):
-    return Parameter(p[1].getstr(), p[2], p[3], p[0])
+    param = Parameter(p[1].getstr(), p[2], p[3], p[0])
+    return param
 
 @pg.production('param_qualifier : IN')
 @pg.production('param_qualifier : OUT')
@@ -273,6 +274,24 @@ def expression_singleton(p):
 def expression_tail(p):
     return p[0] + [ p[2] ]
 
+@pg.production('arguments_list : argument')
+def arguments_singleton(p):
+    return [ p[0] ]
+
+@pg.production('arguments_list : arguments_list COMMA argument')
+def arguments_tail(p):
+    return p[0] + [ p[2] ]
+
+@pg.production('argument : expression')
+def argument(p):
+    return p[0]
+
+@pg.production('argument : IDENTIFIER DDOTS expression')
+def named_argument(p):
+    arg = p[2]
+    arg.param_name = p[0].getstr()
+    return arg
+
 token_to_constructor = {}
 token_to_constructor['PLUS'] = Add
 token_to_constructor['MINUS'] = Sub
@@ -355,60 +374,20 @@ def expression_unaryop(p):
 def expression_unaryop(p):
     inner = p[0]
     return Prime(inner)
-
-@pg.production('expression_emptylist : expression_list')
-@pg.production('expression_emptylist : ')
+  
+@pg.production('arguments_emptylist : arguments_list')
+@pg.production('arguments_emptylist : ')
 def expression_tail(p):
     if len(p) == 0:
         return []
     else:
         return p[0]
-    
-# @pg.production('named_arguments_list : IDENTIFIER DDOTS expression')
-# def named_arguments_list_singleton(p):
-#     return [ (p[1].getstr(), p[3]) ]
 
-# @pg.production('named_arguments_list : named_arguments_list COMMA IDENTIFIER DDOTS expression')
-# def expression_tail(p):
-#     return [ p[0] ] + [ p[2] ]
-
-# @pg.production('named_arguments_emptylist : named_arguments_list')
-# def named_arguments_list(p):
-#     return p[0]
-
-# @pg.production('named_arguments_emptylist : ')
-# def named_arguments_emptylist(p):
-#     return []
-
-# @pg.production('expression : expression DOT IDENTIFIER OPEN_PARENS expression_emptylist named_arguments_emptylist CLOSE_PARENS')
-
-# @pg.production('optional_named_param : IDENTIFIER DDOTS')
-# @pg.production('optional_named_param : ')
-# def optional_named_param(p):
-#     if len(p) == 0:
-#         return None
-#     return Identifier(p[0].getstr())
-
-# @pg.production('args_list : args_list COMMA optional_named_param expression')
-# def args_list_tail(p):
-#     if p[2] is None:
-#         return p[0] + [ p[3] ]
-#     else:
-#         return p[0] + [ p[3] ]
-    
-# @pg.production('args_list : optional_named_param expression')
-# def args_list_tail(p):
-#     return [ p[1] ]
-
-# @pg.production('args_list : ')
-# def args_list_tail(p):
-#     return []
-
-@pg.production('expression : expression DOT IDENTIFIER OPEN_PARENS expression_emptylist CLOSE_PARENS')
+@pg.production('expression : expression DOT IDENTIFIER OPEN_PARENS arguments_emptylist CLOSE_PARENS')
 def expression_methodcall(p):
     return MethodCall(p[2].getstr(), p[0], p[4])
 
-@pg.production('expression : expression OPEN_PARENS expression_emptylist CLOSE_PARENS')
+@pg.production('expression : expression OPEN_PARENS arguments_emptylist CLOSE_PARENS')
 def expression_functioncall(p):
     if p[0].__class__ == Identifier:
         return MethodCall(p[0].value, None, p[2])

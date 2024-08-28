@@ -181,18 +181,21 @@ class Matrix(BaseBox):
 class MethodCall(Expression):
     _fields = ['receiver', 'args', 'named_args']
 
-    def __init__(self, method_name, receiver, args, named_args=None):
+    def __init__(self, method_name, receiver, args):
         super().__init__()
         self.method_name = method_name
         self.receiver = receiver
         self.args = args
-        self.named_args = named_args
 
     def asLisp(self):
-        args = ' '.join([asLisp(arg) for arg  in self.args])
+        def as_named_lisp(arg):
+            if getattr(arg, 'param_name', None):
+                return '(' + str(arg.param_name) + ' ' + asLisp(arg) + ')'
+            else:
+                return asLisp(arg)
+        args = ' '.join([as_named_lisp(arg) for arg  in self.args])
         receiver = self.receiver and self.receiver.asLisp() or '()'
-        named_args = self.named_args and (' (' + asLisp(self.named_args) + ')') or ''
-        return "(MethodCall {} {} ({}){})".format(self.method_name, receiver, args, named_args)
+        return "(MethodCall {} {} ({}))".format(self.method_name, receiver, args)
     
 class ConditionalExpression(Expression):
     _fields = ['condition', 'then_expr', 'else_expr']
@@ -303,12 +306,13 @@ class Quickcheck(ProtoFunction):
   
 class Parameter(BaseBox):
     _fields = ['type_expr', 'initialization', 'qualifier']
-    def __init__(self, variable_name, type_expr=None, initialization=None, qualifier=None):
+    def __init__(self, variable_name, type_expr=None, initialization=None, qualifier=None, argname=None):
         super().__init__()
         self.variable_name = variable_name
         self.type_expr = type_expr
         self.initialization = initialization
         self.qualifier = qualifier
+        self.argname = argname
 
     def asLisp(self):
         type_expr = self.type_expr and self.type_expr.asLisp() or '()'

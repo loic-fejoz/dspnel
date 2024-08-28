@@ -257,6 +257,8 @@ class PrettyPrinter:
             return self.pp_list(ast)
         elif t == Matrix:
             return self.pp_matrix(ast, last_nl=False)
+        elif t == ArrayOf:
+            return self.pp_arrayof(ast)
         else:
             raise BaseException("Unknown type {} '{}'".format(repr(t), asLisp(ast)))
         
@@ -398,3 +400,8 @@ class PrettyPrinter:
         content[0][0] = '['
         content[-1][-1] = ']'
         return table(content, colsfmt, seps, last_nl=last_nl, end=end)
+    
+    def pp_arrayof(self, ast):
+        if ast.size == None:
+            return concat(['[', self.pp(ast.inner), ';]'])
+        return concat(['[', self.pp(ast.inner), ';', self.pp(ast.size), ']'])

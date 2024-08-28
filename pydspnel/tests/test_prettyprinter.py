@@ -284,3 +284,24 @@ def test_matrix():
 
     ast = parse("let a = [1, 2, 3];")
     assert pp.as_string(ast) == """let a = [1, 2, 3];\n"""
+
+def test_array():
+    pp = PrettyPrinter()
+
+    ast = parse("""fn window(
+    len: usize = 101,
+    cutoff: freq = 150e3,
+    fs: sample_rate,
+    out y: [c64;],
+) {
+
+}""")
+    assert pp.as_string(ast) == """
+fn window(
+           len: usize       = 101,
+        cutoff: freq        = 150e3,
+            fs: sample_rate,
+    out      y: [c64;],
+) {
+}
+"""

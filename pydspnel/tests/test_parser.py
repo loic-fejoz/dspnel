@@ -77,15 +77,9 @@ def test_expr():
     assert lsp == '(MethodCall foo () (a b))'
     assert len(ast.args) ==  2
 
-    # ast = parse('foo(arg1: a, b)')
-    # lsp = ast.asLisp()
-    # assert lsp == '(MethodCall foo () (a b))'
-    # assert len(ast.args) ==  2
-
-
-    # ast = parse('b.foo(arg1: a)')
-    # ast = ast.asLisp()
-    # assert ast == '(MethodCall foo b () ((arg1 a)))'
+    ast = parse('b.foo(arg1: a)')
+    ast = ast.asLisp()
+    assert ast == '(MethodCall foo b ((arg1 a)))'
 
     # ast = parse('foo(arg1: a)')
     # ast = ast.asLisp()
