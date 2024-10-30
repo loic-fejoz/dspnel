@@ -415,7 +415,8 @@ def block(p):
 
 @pg.production('expression : IF expression block else_condition')
 def expression_conditional(p):
-    return ConditionalExpression(p[1], p[2], p[3])
+    on_stream = p[0].getstr() == 'where'
+    return ConditionalExpression(p[1], p[2], p[3], on_stream=on_stream)
 
 @pg.production('else_condition : ELSE block')
 @pg.production('else_condition : ')

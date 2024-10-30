@@ -281,3 +281,20 @@ def test_matrix():
 
     ast = parse("let a = [1, 2, 3];")
     assert pp.as_string(ast) == """let a = [1, 2, 3];\n"""
+
+def test_conditional():
+    pp = PrettyPrinter()
+
+    ast = parse("if a { b } else { c }")
+    assert pp.as_string(ast) == """if a {
+    b;
+} else {
+    c;
+}\n"""
+
+    ast = parse("where a { b } else { c }")
+    assert pp.as_string(ast) == """where a {
+    b;
+} else {
+    c;
+}\n"""
