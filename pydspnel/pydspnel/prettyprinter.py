@@ -247,7 +247,15 @@ class PrettyPrinter:
             current_prio = self.priority(ast)
             return concat(['not ', self.maybe_paren(current_prio, ast.inner)])
         elif t == ConditionalExpression:
-            return concat(['if ', self.pp(ast.condition), ' ', bracket('{\n', self.pp(ast.then_expr), '}\n')])
+            if ast.on_stream:
+                keyword = 'where '
+            else:
+                keyword = 'if '
+            tokens = [keyword, self.pp(ast.condition), ' ', bracket('{\n', self.pp(ast.then_expr), '}')]
+            if ast.else_expr:
+                tokens.extend([' else ', bracket('{\n', self.pp(ast.else_expr), '}')])
+            tokens.append('\n')
+            return concat(tokens)
         elif t == ReturnStatement:
             if ast.expr:
                 return concat(['return ', self.pp(ast.expr), ';\n'])
