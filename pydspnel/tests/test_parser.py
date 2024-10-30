@@ -101,6 +101,10 @@ def test_expr():
     ast = ast.asLisp()
     assert ast == '(Cond a (Block b) (Block c))'
 
+    ast = parse('where a { b } else { c }')
+    ast = ast.asLisp()
+    assert ast == '(Cond a (Block b) (Block c))'
+
     ast = parse('a < b')
     ast = ast.asLisp()
     assert ast == '(LessThan a b)'

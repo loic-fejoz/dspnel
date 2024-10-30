@@ -69,3 +69,4 @@ kernel k2 {
 * https://www.khronos.org/openvx/
 * https://www.khronos.org/opencl/
 * https://gstreamer.freedesktop.org/documentation/tools/gst-launch.html?gi-language=c
+* https://alastairreid.github.io/papers/SDR_06/ SPEX: A programming language for software defined radio 

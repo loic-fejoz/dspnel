@@ -25,7 +25,7 @@ kernel AGC(
     let smoothed_energy_estimate = (1.0 - alpha) * y2' + alpha * y2;
 
     // update gain according to output energy
-    if smoothed_energy_estimate > 1e-6 {
+    where smoothed_energy_estimate > 1e-6 {
         g *= (-0.5 * alpha * smoothed_energy_estimate.log()).exp();
     }
 

@@ -39,7 +39,7 @@ lg.add('CLOSE_SQBRACKET', r'\]')
 
 lg.add('KERNEL', r'kernel(?=\s)')
 lg.add('RETURN', r'return(?![_$a-zA-Z0-9])')
-lg.add('IF', r'if(?![_$a-zA-Z0-9])')
+lg.add('IF', r'(if|where)(?![_$a-zA-Z0-9])')
 lg.add('FOR', r'for(?![_$a-zA-Z0-9])')
 lg.add('ENSURES', r'ensures(?![_$a-zA-Z0-9])')
 lg.add('REQUIRES', r'requires(?![_$a-zA-Z0-9])')

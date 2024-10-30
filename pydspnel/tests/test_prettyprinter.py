@@ -305,3 +305,20 @@ fn window(
 ) {
 }
 """
+
+def test_conditional():
+    pp = PrettyPrinter()
+
+    ast = parse("if a { b } else { c }")
+    assert pp.as_string(ast) == """if a {
+    b;
+} else {
+    c;
+}\n"""
+
+    ast = parse("where a { b } else { c }")
+    assert pp.as_string(ast) == """where a {
+    b;
+} else {
+    c;
+}\n"""

@@ -200,11 +200,12 @@ class MethodCall(Expression):
 class ConditionalExpression(Expression):
     _fields = ['condition', 'then_expr', 'else_expr']
 
-    def __init__(self, condition, then_expr, else_expr=None):
+    def __init__(self, condition, then_expr, else_expr=None, on_stream=False):
         super().__init__()
         self.condition = condition
         self.then_expr = then_expr
         self.else_expr = else_expr
+        self.on_stream = on_stream
 
     def asLisp(self):
         condition = self.condition.asLisp()

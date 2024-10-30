@@ -47,7 +47,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.dspnel",
-				"match": "\\b(return|if|for|ensures|requires|pi|else|assert)\\b"
+				"match": "\\b(return|if|where|for|ensures|requires|pi|else|assert)\\b"
 			}]
 		},
 		"vars": {
