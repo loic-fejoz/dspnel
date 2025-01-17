@@ -11,9 +11,10 @@ fn range(
 fn cosine(
           sample_rate: samprate,
                  freq: freq,
-            amplitude: f64,
+        initial_phase: phase    = 0,                 
+            amplitude: f64,                 
                offset: f64      = 0,
-        initial_phase: phase    = 0,
     out             y: <f64>,
 ) {
+    y = offset + amplitude * signals.samples(sample_rate, freq, initial_phase).re();
 }

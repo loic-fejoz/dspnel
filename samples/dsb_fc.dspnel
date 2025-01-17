@@ -1,0 +1,10 @@
+// Transform single stream into IQ stream
+kernel dsb_fc(
+    // Default Q value
+    q_value: f32 = 0.0,
+    /// I/O Streams
+    in  x: <f32>,
+    out y: <c32>,
+) {
+    y = x + q_value * 1j;
+}

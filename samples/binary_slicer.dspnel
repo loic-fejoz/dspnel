@@ -1,0 +1,10 @@
+// Transform single stream into IQ stream
+kernel binary_slicer(
+    // Splitting value
+    threshold: f32 = 0.0,
+    /// I/O Streams
+    in  x: <f32>,
+    out y: <bool>,
+) {
+    y = (x >= threshold);
+}
