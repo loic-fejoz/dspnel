@@ -1,0 +1,101 @@
+// type bit = uint1;
+
+enum PacketType: uint4 {
+    DATA = 0b0001,
+    ACK  = 0b0010,
+    NACK = 0b0011,
+    CONTROL = 0b0100,
+}
+
+pdu MyPacket {
+    header: uint8,
+    type: PacketType,
+    length: uint12,
+    payload: [bit; length],
+}
+
+union AnotherPayload<uint2> {
+    case 0b00: DataPayload {
+        data: uint64,
+    }
+    case 0b01: AckPayload {
+        sequence: uint16,
+    }
+    case 0b10: ControlPayload {
+        command: uint4,
+        parameter: uint28,
+    }
+}
+
+pdu AnotherPacket {
+    type: uint2,
+    payload: AnotherPayload<type>,
+}
+
+pdu DynamicPacket {
+    type: uint4,
+    length: uint12,
+    payload: [uint8; length],
+}
+
+pdu ConstrainedPacket {
+    type: PacketType,
+    sequence: uint16,
+    payload: [bit; 0..1024],
+
+invariant
+    type == PacketType.ACK ==> payload.len() == 0
+}
+
+pdu ExtensiblePacket {
+    version: uint4,
+    @since(version, 2) newField: uint8,
+    @since(version, 3) newerField: uint16,
+}
+
+pdu EndianAwarePacket {
+    bigEndianField: uint16<big_endian>,
+    littleEndianField: uint16<little_endian>,
+}
+
+network_layer MyNetworkLayer {
+
+}
+
+impl StateMachine for MyNetworkLayer {
+    fn connection_id(pdu: PDU<LowerLayerPDU>) {
+        (pdu.source, pdu.destination, pdu.seq_number)
+    }
+
+    fn connection_id(pdu: PDU<UpperLayerPDU>) {
+        (pdu@src, pdu@dest, pdu.seq)
+    }
+
+    state IDLE {
+        on ConnectRequestPDU(pdu) -> CONNECTING {
+            // Action to take on this transition
+            send_connect_ack();
+        }
+    }
+    state CONNECTING {
+        on CONNECT_ACK -> ESTABLISHED {
+            initialize_connection();
+        }
+    }
+    state ESTABLISHED {
+        on DATA {
+            process_data();
+        }
+        on DISCONNECT -> CLOSING {
+            begin_disconnect();
+        }
+    }
+    state CLOSING {
+        on DISCONNECT -> IDLE {
+            finalize_disconnect();
+        }
+        on timeout(10s) -> IDLE {
+            force_disconnect();
+        }
+    }
+}

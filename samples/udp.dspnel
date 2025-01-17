@@ -1,0 +1,66 @@
+type UDPPort = uint16;
+
+pdu UDPHeader {
+    source_port: UDPPort,
+    destination_port: UDPPort,
+    length: uint16,
+    checksum: uint16,
+}
+
+pdu UDPPacket {
+    header: UDPHeader,
+    data: [uint8; header.length - UDPHeader.size()],
+}
+
+network_layer UDPLayer {
+    const MAX_UDP_DATA_LENGTH: usize = uint16.MAX - UDPHeader.size();
+
+    port_bindings: HashMap<UDPPort, LayerID>;
+
+    icmp_layer: Option<&ICMPLayer>;
+}
+
+impl UDPLayer {
+    fn handle_from_lower(self, pdu: PDU<UDPPacket>, lower_layer_id: LayerID) -> Result {
+        verify_checksum(pdu)?;
+        if let Some(upper_layer_id) = port_bindings.get(pdu.destination_port) {
+            self.send_to_upper(pdu.data, upper_layer_id)
+        } else {
+            send_icmp_port_unreachable(pdu, lower_layer_id)
+        }
+    }
+
+    fn handle_from_upper(self, pdu: PDU, upper_layer_id: LayerID) -> Result {
+        if pdu.size() > MAX_UDP_DATA_LENGTH {
+            return Err(Error::PacketTooLarge);
+        }
+        let udp_packet = UDPPacket {
+            header: UDPHeader {
+                source_port: pdu@source_port,
+                destination_port: pdu@destination_port,
+                length: pdu.size() + UDPHeader.size(),
+                checksum: 0,
+            }
+        };
+        udp_packet.checksum = compute_checksum(udp_packet);
+        udp_packet@.. = pdu@..;
+        self.send_to_lower(udp_packet)
+    }
+
+    fn send_icmp_port_unreachable(pdu: PDU<UDPPacket>, lower_layer_id: LayerID) -> Result {
+        // TODO
+    }
+
+    fn verify_checksum(pdu: UDPPacket) -> Result {
+        let computed = compute_checksum(pdu);
+        if computed == pdu.checksum {
+            Ok(())
+        } else {
+            Err(Error::BadChecksum)
+        }
+    }
+
+    fn compute_checksum(pdu: UDPPacket) -> uint16 {
+        // TODO
+    }
+}
