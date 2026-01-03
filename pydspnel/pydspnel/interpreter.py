@@ -36,6 +36,11 @@ class DSPnelInterpreter:
         pass
 
     def evalExpr(self, expr, env):
+        if isinstance(expr, list):
+            res = None
+            for e in expr:
+                res = self.evalStmt(e, env)
+            return res
         kind = expr.__class__.__name__
         if kind == 'Number':
             val = expr.value
@@ -60,6 +65,10 @@ class DSPnelInterpreter:
             return self.evalMatrix(expr, env)
         elif kind == 'Identifier':
             return env[expr.value]
+        elif kind == 'LinearConnection':
+            left = self.evalExpr(expr.left, env)
+            right = self.evalExpr(expr.right, env)
+            return CompositeInterpreter(left, right)
         elif kind == 'Prime':
             # Prime operator returns the previous value from the history
             # For now, we only support priming identifiers
@@ -69,15 +78,35 @@ class DSPnelInterpreter:
             else:
                 raise Exception('Prime operator currently only supported on Identifiers')
         elif kind == 'MethodCall':
+            # Check if this is a kernel instantiation
+            if expr.receiver is None and expr.method_name in env:
+                target = env[expr.method_name]
+                if target.__class__.__name__ == 'Kernel':
+                    # It's a kernel definition, instantiate it
+                    static_args = {}
+                    # For now just handle positional args as static params
+                    for i, arg in enumerate(expr.args):
+                        param = target.params[i]
+                        static_args[param.variable_name] = self.evalExpr(arg, env)
+                    return KernelInterpreter(target, static_args)
+            
             receiver = self.evalExpr(expr.receiver, env)
             mthd = getattr(receiver, expr.method_name, None)
             if mthd:
                 args = [self.evalExpr(arg, env) for arg in expr.args]
                 return mthd(*args)
             else:
-                mthd = getattr(expr.receiver.dspnel_type, 'dsp_' + expr.method_name)
-                args = [receiver] + [self.evalExpr(arg, env) for arg in expr.args]
-                return mthd(*args)
+                # Try dsp_ prefix if it has a type with dsp_ method
+                if hasattr(expr.receiver, 'dspnel_type'):
+                    mthd = getattr(expr.receiver.dspnel_type, 'dsp_' + expr.method_name, None)
+                    if mthd:
+                        args = [receiver] + [self.evalExpr(arg, env) for arg in expr.args]
+                        return mthd(*args)
+                
+                # Fallback to older behavior if receiver is not None but no method found
+                if receiver is None:
+                    raise Exception(f"Function {expr.method_name} not found")
+                raise Exception(f"Method {expr.method_name} not found on {receiver}")
         else:
             raise Exception('Not yet handled: ' + kind)
 
@@ -92,6 +121,12 @@ class DSPnelInterpreter:
             else:
                 val = None
             env[stmt.variable_name] = val
+        elif kind == 'Kernel':
+            # Just store the kernel definition in env
+            env[stmt.name] = stmt
+        elif kind == 'Function':
+            # Just store the function definition in env
+            env[stmt.name] = stmt
         elif kind == 'ReturnStatement':
             return self.evalExpr(stmt.expr, env)
         elif kind == 'Block':
@@ -176,3 +211,36 @@ class KernelInterpreter:
                 outputs[param.variable_name] = self.env.get(param.variable_name)
         
         return outputs
+
+class CompositeInterpreter:
+    def __init__(self, left, right) -> None:
+        self.left = left
+        self.right = right
+
+    def step(self, inputs):
+        # Step left kernel
+        out_left = self.left.step(inputs)
+        
+        # Map outputs of left to inputs of right
+        # For now, we assume standard linear connection where first output maps to first input
+        # or we map by name if they match.
+        
+        # Prepare inputs for right
+        in_right = {}
+        # Simple heuristic: if left has one output and right has one input, connect them
+        left_outs = list(out_left.values())
+        if len(left_outs) == 1:
+            # Look for the input of right. We need the kernel node to know param names and qualifiers.
+            if hasattr(self.right, 'kernel'):
+                right_in_params = [p for p in self.right.kernel.params if p.qualifier == 'in']
+                if len(right_in_params) == 1:
+                    in_right[right_in_params[0].variable_name] = left_outs[0]
+            elif isinstance(self.right, CompositeInterpreter):
+                # If right is composite, it must handle its own inputs
+                # This is a bit tricky, let's just pass the whole dict for now if names match
+                in_right.update(out_left)
+        else:
+            # Map by name
+            in_right.update(out_left)
+            
+        return self.right.step(in_right)

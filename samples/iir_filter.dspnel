@@ -1,0 +1,19 @@
+kernel iir_2nd_order(
+    a1: f32, a2: f32,
+    b0: f32, b1: f32, b2: f32,
+    in  x: <f32>,
+    out y: <f32>,
+) {
+    // Direct Form I implementation
+    y = b0 * x + b1 * x' + b2 * x'' - a1 * y' - a2 * y'';
+}
+
+kernel low_pass_1st_order(
+    alpha: f32,
+    in  x: <f32>,
+    out y: <f32>,
+) {
+    y = alpha * x + (1.0 - alpha) * y';
+}
+
+let my_filter = low_pass_1st_order(0.1);

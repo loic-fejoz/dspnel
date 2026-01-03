@@ -1,0 +1,21 @@
+kernel delay_line(
+    max_delay: usize,
+    in x: <f32>,
+    in delay: <usize>,
+    out y: <f32>,
+) {
+    state buffer: [f32; max_delay] = [0.0; max_delay];
+    state write_ptr: usize = 0;
+    
+    // Write input to buffer
+    buffer[write_ptr] = x;
+    
+    // Read delayed sample
+    let read_ptr = (write_ptr + max_delay - delay) % max_delay;
+    y = buffer[read_ptr];
+    
+    // Update pointer
+    write_ptr = (write_ptr + 1) % max_delay;
+}
+
+let simple_echo = delay_line(44100, delay: 11025); // 250ms delay at 44.1kHz

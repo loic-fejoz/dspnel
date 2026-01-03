@@ -144,6 +144,28 @@ class MatrixType:
     def __ge__(self, other):
         return not self.__lt__(other)
 
+class KernelType:
+    def __init__(self, name, inputs, outputs):
+        self.name = name
+        self.inputs = inputs # Dict mapping name to type
+        self.outputs = outputs # Dict mapping name to type
+
+    def __repr__(self) -> str:
+        return f"KernelType({self.name}, in={self.inputs}, out={self.outputs})"
+
+    def __lt__(self, other):
+        return False
+
+class FlowgraphType:
+    def __init__(self, kernels):
+        self.kernels = kernels
+    
+    def __repr__(self) -> str:
+        return f"FlowgraphType({self.kernels})"
+
+    def __lt__(self, other):
+        return False
+
 class StreamType:
     def __init__(self, innerType) -> None:
         self.innerType = innerType

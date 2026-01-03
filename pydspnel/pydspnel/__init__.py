@@ -21,7 +21,7 @@ def parseAndTypes(src):
     return ast
 
 def eval(src, env = None):
-    if not env:
+    if env is None:
         env = {}
     ast = parseAndTypes(src)
     interpreter = DSPnelInterpreter()

@@ -1,0 +1,29 @@
+kernel bit_to_symbol(in bits: <u1>, out symbols: <u2>,) {
+    state buffer: u1 = 0;
+    state phase: u1 = 0;
+    
+    if phase == 0 {
+        buffer = bits;
+        phase = 1;
+    } else {
+        symbols = (buffer << 1) | bits;
+        phase = 0;
+    }
+}
+
+kernel symbol_to_constellation(in symbols: <u2>, out iq: <c32>,) {
+    if symbols == 0 { iq = 1.0 + 1.0j; }
+    else if symbols == 1 { iq = -1.0 + 1.0j; }
+    else if symbols == 2 { iq = -1.0 - 1.0j; }
+    else { iq = 1.0 - 1.0j; }
+    
+    // Normalize
+    iq = iq * 0.707;
+}
+
+kernel pulse_shaper(in x: <c32>, out y: <c32>,) {
+    // Very simple pulse shaper (just pass through for now)
+    y = x;
+}
+
+let qpsk_mod = bit_to_symbol() |> symbol_to_constellation() |> pulse_shaper();
