@@ -60,6 +60,14 @@ class DSPnelInterpreter:
             return self.evalMatrix(expr, env)
         elif kind == 'Identifier':
             return env[expr.value]
+        elif kind == 'Prime':
+            # Prime operator returns the previous value from the history
+            # For now, we only support priming identifiers
+            if expr.inner.__class__.__name__ == 'Identifier':
+                history = env.get('__history__', {})
+                return history.get(expr.inner.value, 0) # Default to 0 if no history
+            else:
+                raise Exception('Prime operator currently only supported on Identifiers')
         elif kind == 'MethodCall':
             receiver = self.evalExpr(expr.receiver, env)
             mthd = getattr(receiver, expr.method_name, None)
@@ -72,6 +80,31 @@ class DSPnelInterpreter:
                 return mthd(*args)
         else:
             raise Exception('Not yet handled: ' + kind)
+
+    def evalStmt(self, stmt, env):
+        kind = stmt.__class__.__name__
+        if kind == 'Assignment':
+            val = self.evalExpr(stmt.expr, env)
+            env[stmt.variable_name] = val
+        elif kind == 'LetStatement':
+            if stmt.initialization:
+                val = self.evalExpr(stmt.initialization, env)
+            else:
+                val = None
+            env[stmt.variable_name] = val
+        elif kind == 'ReturnStatement':
+            return self.evalExpr(stmt.expr, env)
+        elif kind == 'Block':
+            return self.evalBlock(stmt, env)
+        else:
+            # Try to evaluate as expression if it's not a known statement
+            return self.evalExpr(stmt, env)
+
+    def evalBlock(self, block, env):
+        res = None
+        for stmt in block.stmts:
+            res = self.evalStmt(stmt, env)
+        return res
 
     def evalMatrix(self, expr, env):
         res = [self.evalRow(row, env) for row in expr.rows]
@@ -96,3 +129,50 @@ class DSPnelInterpreter:
             return res
         else:
             raise Exception('Not yet handled Row: ' + kind)
+
+class KernelInterpreter:
+    def __init__(self, kernel_node, static_args=None) -> None:
+        self.kernel = kernel_node
+        self.env = {'__history__': {}}
+        self.interpreter = DSPnelInterpreter()
+        
+        if static_args is None:
+            static_args = {}
+
+        # Initialize parameters and state
+        for param in kernel_node.params:
+            if param.qualifier == 'state':
+                if param.initialization:
+                    val = self.interpreter.evalExpr(param.initialization, {})
+                    self.env[param.variable_name] = val
+                else:
+                    self.env[param.variable_name] = 0
+            elif param.qualifier is None: # Static parameter
+                if param.variable_name in static_args:
+                    self.env[param.variable_name] = static_args[param.variable_name]
+                elif param.initialization:
+                    val = self.interpreter.evalExpr(param.initialization, {})
+                    self.env[param.variable_name] = val
+
+    def step(self, inputs):
+        # inputs is a dict mapping input stream names to current values
+        # 1. Update history for inputs and potentially internal variables
+        # For simplicity, we save the current env to history before update
+        for k, v in self.env.items():
+            if k != '__history__':
+                self.env['__history__'][k] = v
+        
+        # 2. Update inputs
+        for k, v in inputs.items():
+            self.env[k] = v
+        
+        # 3. Execute kernel block
+        self.interpreter.evalBlock(self.kernel.block, self.env)
+        
+        # 4. Collect outputs
+        outputs = {}
+        for param in self.kernel.params:
+            if param.qualifier == 'out':
+                outputs[param.variable_name] = self.env.get(param.variable_name)
+        
+        return outputs

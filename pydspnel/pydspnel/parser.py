@@ -12,7 +12,7 @@ pg = ParserGenerator(
      'KERNEL', 'STATE', 'LT', 'GT', 'GEQ', 'LEQ', 'FUNCTION', 'RETURN',
      'REQUIRES', 'ENSURES', 'MUL_ASSIGN', 'SUB_ASSIGN', 'ADD_ASSIGN',
      'DEQUALS', 'DIFFERENT', 'IMPLY', 'XOR', 'OR', 'AND', 'NOT', 'MODULO',
-     'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'QUICKCHECK', 'PIPE', 'AMPERSAND',
+     'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'QUICKCHECK', 'PIPE', 'PIPE_RIGHT', 'AMPERSAND',
      'BTLEFT', 'BTRIGHT', 'BITNEG', 'OPEN_SQBRACKET', 'CLOSE_SQBRACKET'
     ],
     # A list of precedence rules with ascending precedence, to
@@ -25,7 +25,7 @@ pg = ParserGenerator(
         ('left', ['AND']),
         ('right', ['NOT']),
         ('left', ['GT', 'LT', 'DEQUALS', 'DIFFERENT', 'GEQ', 'LEQ']),
-        ('left', ['PIPE']),
+        ('left', ['PIPE', 'PIPE_RIGHT']),
         ('left', ['AMPERSAND']),
         ('left', ['BTLEFT', 'BTRIGHT']),
         ('left', ['PLUS', 'MINUS']),
@@ -276,7 +276,8 @@ token_to_constructor['OR'] = Or
 token_to_constructor['XOR'] = Xor
 token_to_constructor['IMPLY'] = Imply
 token_to_constructor['MODULO'] = Modulo
-token_to_constructor['PIPE'] = Pipe # Typing will translate into BitwiseOr or LinearConnection
+token_to_constructor['PIPE'] = BitwiseOr
+token_to_constructor['PIPE_RIGHT'] = LinearConnection
 token_to_constructor['AMPERSAND'] = BitwiseAnd
 token_to_constructor['BTLEFT'] = BitShiftLeft
 token_to_constructor['BTRIGHT'] = BitShiftRight
@@ -297,6 +298,7 @@ token_to_constructor['BTRIGHT'] = BitShiftRight
 @pg.production('expression : expression DEQUALS expression')
 @pg.production('expression : expression DIFFERENT expression')
 @pg.production('expression : expression PIPE expression')
+@pg.production('expression : expression PIPE_RIGHT expression')
 @pg.production('expression : expression AMPERSAND expression')
 @pg.production('expression : expression BTLEFT expression')
 @pg.production('expression : expression BTRIGHT expression')

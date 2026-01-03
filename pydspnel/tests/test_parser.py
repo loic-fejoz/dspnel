@@ -145,7 +145,11 @@ def test_expr():
     # Could be bitwise or, or kernels connection
     ast = parse('a | b')
     ast = ast.asLisp()
-    assert ast == '(Pipe a b)'
+    assert ast == '(BitwiseOr a b)'
+
+    ast = parse('a |> b')
+    ast = ast.asLisp()
+    assert ast == '(LinearConnection a b)'
 
     ast = parse('a & b')
     ast = ast.asLisp()

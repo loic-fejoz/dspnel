@@ -24,7 +24,7 @@ kernel to_qpsk(
     let in_radians = in_degrees * pi / 180.0;
     iq = in_radians.cos() + 1j * in_radians.sin();
 }
-let k2 = to_qpsk() | simplest_iir_low_pass_filter(0.5);
+let k2 = to_qpsk() |> simplest_iir_low_pass_filter(0.5);
 
 kernel mag_phase(
     in     iq: <c32>,
@@ -53,6 +53,6 @@ ensures
 quickcheck example1_always_positive(
     in a: <u32>,
 ) {
-    let flowgraph = a | example1();
+    let flowgraph = a |> example1();
     assert(flowgraph.abs_a >= 0);
 }
