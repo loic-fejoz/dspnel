@@ -4,18 +4,14 @@ kernel delay_line(
     in delay: <usize>,
     out y: <f32>,
 ) {
-    state buffer: [f32; max_delay] = [0.0; max_delay];
-    state write_ptr: usize = 0;
+    @align(64)
+    state buffer: circular_buffer<f32, max_delay>;
     
     // Write input to buffer
-    buffer[write_ptr] = x;
+    buffer.push(x);
     
     // Read delayed sample
-    let read_ptr = (write_ptr + max_delay - delay) % max_delay;
-    y = buffer[read_ptr];
-    
-    // Update pointer
-    write_ptr = (write_ptr + 1) % max_delay;
+    y = buffer.get(delay);
 }
 
 let simple_echo = delay_line(44100, delay: 11025); // 250ms delay at 44.1kHz

@@ -13,13 +13,12 @@ pg = ParserGenerator(
      'REQUIRES', 'ENSURES', 'MUL_ASSIGN', 'SUB_ASSIGN', 'ADD_ASSIGN',
      'DEQUALS', 'DIFFERENT', 'IMPLY', 'XOR', 'OR', 'AND', 'NOT', 'MODULO',
      'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'QUICKCHECK', 'PIPE', 'PIPE_RIGHT', 'AMPERSAND',
-     'BTLEFT', 'BTRIGHT', 'BITNEG', 'OPEN_SQBRACKET', 'CLOSE_SQBRACKET'
+     'BTLEFT', 'BTRIGHT', 'BITNEG', 'AT', 'FIXED_POINT_TYPE', 'MATCH', 'FAT_ARROW'
     ],
     # A list of precedence rules with ascending precedence, to
     # disambiguate ambiguous production rules.
     precedence=[
         ('left', ['COMMA']),
-        ('left', ['SEMICOLON']),
         ('left', ['IMPLY']),
         ('left', ['OR', 'XOR']),
         ('left', ['AND']),
@@ -35,6 +34,9 @@ pg = ParserGenerator(
         ('right', ['PRIME']),
         ('left', ['DOT']),
         ('left', ['OPEN_PARENS']),
+        ('left', ['IF']),
+        ('left', ['ELSE']),
+        ('left', ['SEMICOLON']),
     ]
 )
 
@@ -67,9 +69,23 @@ def optional_comment(p):
         return None
     return Comment(p[0].getstr())
 
-@pg.production('stmt : LET IDENTIFIER type_expr_or_empty initialization_expr SEMICOLON')
+@pg.production('optional_attributes : attribute optional_attributes')
+@pg.production('optional_attributes : ')
+def optional_attributes(p):
+    if len(p) == 0:
+        return []
+    return [ p[0] ] + p[1]
+
+@pg.production('attribute : AT IDENTIFIER OPEN_PARENS expression_list CLOSE_PARENS')
+@pg.production('attribute : AT IDENTIFIER')
+def attribute(p):
+    if len(p) == 2:
+        return Attribute(p[1].getstr())
+    return Attribute(p[1].getstr(), p[3])
+
+@pg.production('stmt : optional_attributes LET IDENTIFIER type_expr_or_empty initialization_expr SEMICOLON')
 def statement_let(p):
-    return LetStatement(p[1].getstr(), p[2], p[3])
+    return LetStatement(p[2].getstr(), p[3], p[4], p[0])
 
 @pg.production('stmt : IDENTIFIER EQUALS expression SEMICOLON')
 def statement_expr(p):
@@ -119,17 +135,23 @@ def statement_kernel(p):
     return protofunc
 
 @pg.production('parameters_list : optional_doccomment parameter COMMA optional_comment parameters_list')
+@pg.production('parameters_list : optional_doccomment parameter optional_comment')
 @pg.production('parameters_list : ')
 def params_list(p):
     if len(p) == 0:
         return []
+    if len(p) == 3 or len(p) == 2: # parameter [optional_comment]
+        param = p[1]
+        param.doc = p[0]
+        return [ param ]
+    # parameter COMMA optional_comment parameters_list
     param = p[1]
     param.doc = p[0]
     return [ param ] + p[4]
 
-@pg.production('parameter : param_qualifier IDENTIFIER type_expr_or_empty initialization_expr')
-def statement_let(p):
-    return Parameter(p[1].getstr(), p[2], p[3], p[0])
+@pg.production('parameter : optional_attributes param_qualifier IDENTIFIER type_expr_or_empty initialization_expr')
+def statement_parameter(p):
+    return Parameter(p[2].getstr(), p[3], p[4], p[1], p[0])
 
 @pg.production('param_qualifier : IN')
 @pg.production('param_qualifier : OUT')
@@ -171,6 +193,30 @@ def type_constructor_call(p):
     receiver = p[0].receiver
     return MethodCall(method_name, receiver, [ p[2] ])
 
+@pg.production('type_expression : constructor_type LT type_expression COMMA expression GT')
+def type_buffer(p):
+    if p[0].__class__ == Identifier:
+        kind = p[0].value
+    elif p[0].__class__ == GetAttribute:
+        kind = p[0].attr_name # Simplification, but usually buffers are not qualified like this?
+    else:
+        kind = str(p[0])
+        
+    if kind in ['buffer', 'circular_buffer', 'round_robin']:
+        return BufferType(kind, p[2], p[4])
+    return MethodCall(kind, None, [ p[2], p[4] ])
+
+@pg.production('type_expression : FIXED_POINT_TYPE')
+def type_fixed_point(p):
+    s = p[0].getstr()
+    signed = s.startswith('Q')
+    if s.startswith('UQ'):
+        signed = False
+        parts = s[2:].split('.')
+    else:
+        parts = s[1:].split('.')
+    return FixedPointType(signed, int(parts[0]), int(parts[1]))
+
 @pg.production('type_expression : OPEN_SQBRACKET type_expression SEMICOLON optional_expression CLOSE_SQBRACKET')
 def type_array_of(p):
     return ArrayOf(p[1], p[3])
@@ -199,7 +245,7 @@ def statement_expr(p):
     return SubAssignment(p[0].getstr(), p[2])
 
 @pg.production('stmt : expression SEMICOLON')
-@pg.production('stmt : expression')
+@pg.production('stmt : expression', precedence='COMMA')
 def statement_expr(p):
     return p[0]
 
@@ -345,67 +391,54 @@ def expression_unaryop(p):
     inner = p[0]
     return Prime(inner)
 
-@pg.production('expression_emptylist : expression_list')
-@pg.production('expression_emptylist : ')
-def expression_tail(p):
+@pg.production('argument : expression')
+def argument_pos(p):
+    return p[0]
+
+@pg.production('argument : IDENTIFIER DDOTS expression')
+def argument_named(p):
+    return (p[0].getstr(), p[2])
+
+@pg.production('argument_list : argument')
+def argument_list_singleton(p):
+    return [ p[0] ]
+
+@pg.production('argument_list : argument_list COMMA argument')
+def argument_list_tail(p):
+    return p[0] + [ p[2] ]
+
+@pg.production('argument_emptylist : argument_list')
+@pg.production('argument_emptylist : ')
+def argument_emptylist(p):
     if len(p) == 0:
         return []
-    else:
-        return p[0]
-    
-# @pg.production('named_arguments_list : IDENTIFIER DDOTS expression')
-# def named_arguments_list_singleton(p):
-#     return [ (p[1].getstr(), p[3]) ]
+    return p[0]
 
-# @pg.production('named_arguments_list : named_arguments_list COMMA IDENTIFIER DDOTS expression')
-# def expression_tail(p):
-#     return [ p[0] ] + [ p[2] ]
+def split_args(args):
+    positional = []
+    named = []
+    for a in args:
+        if isinstance(a, tuple):
+            named.append(a)
+        else:
+            positional.append(a)
+    return positional, named
 
-# @pg.production('named_arguments_emptylist : named_arguments_list')
-# def named_arguments_list(p):
-#     return p[0]
-
-# @pg.production('named_arguments_emptylist : ')
-# def named_arguments_emptylist(p):
-#     return []
-
-# @pg.production('expression : expression DOT IDENTIFIER OPEN_PARENS expression_emptylist named_arguments_emptylist CLOSE_PARENS')
-
-# @pg.production('optional_named_param : IDENTIFIER DDOTS')
-# @pg.production('optional_named_param : ')
-# def optional_named_param(p):
-#     if len(p) == 0:
-#         return None
-#     return Identifier(p[0].getstr())
-
-# @pg.production('args_list : args_list COMMA optional_named_param expression')
-# def args_list_tail(p):
-#     if p[2] is None:
-#         return p[0] + [ p[3] ]
-#     else:
-#         return p[0] + [ p[3] ]
-    
-# @pg.production('args_list : optional_named_param expression')
-# def args_list_tail(p):
-#     return [ p[1] ]
-
-# @pg.production('args_list : ')
-# def args_list_tail(p):
-#     return []
-
-@pg.production('expression : expression DOT IDENTIFIER OPEN_PARENS expression_emptylist CLOSE_PARENS')
+@pg.production('expression : expression DOT IDENTIFIER OPEN_PARENS argument_emptylist CLOSE_PARENS')
 def expression_methodcall(p):
-    return MethodCall(p[2].getstr(), p[0], p[4])
+    pos, named = split_args(p[4])
+    return MethodCall(p[2].getstr(), p[0], pos, named)
 
-@pg.production('expression : expression OPEN_PARENS expression_emptylist CLOSE_PARENS')
+@pg.production('expression : expression OPEN_PARENS argument_emptylist CLOSE_PARENS')
 def expression_functioncall(p):
+    pos, named = split_args(p[2])
     if p[0].__class__ == Identifier:
-        return MethodCall(p[0].value, None, p[2])
+        return MethodCall(p[0].value, None, pos, named)
     elif p[0].__class__ == GetAttribute:
         receiver = p[0].receiver
         method_name = p[0].attr_name
-        return MethodCall(method_name, receiver, p[2])
-    return MethodCall(None, p[0], p[2])
+        return MethodCall(method_name, receiver, pos, named)
+    return MethodCall(None, p[0], pos, named)
 
 @pg.production('expression : expression DOT IDENTIFIER')
 def expression_getattr(p):
@@ -415,7 +448,7 @@ def expression_getattr(p):
 def block(p):
     return Block(p[1])
 
-@pg.production('expression : IF expression block else_condition')
+@pg.production('expression : IF expression block else_condition', precedence='IF')
 def expression_conditional(p):
     on_stream = p[0].getstr() == 'where'
     return ConditionalExpression(p[1], p[2], p[3], on_stream=on_stream)
@@ -426,5 +459,30 @@ def expression_else_condition(p):
     if len(p) == 0:
         return None
     return p[1]
+
+@pg.production('expression : MATCH expression OPEN_BRACKETS match_arms CLOSE_BRACKETS')
+def expression_match(p):
+    return MatchExpression(p[1], p[3])
+
+@pg.production('match_arms : match_arm match_arms')
+@pg.production('match_arms : ')
+def match_arms(p):
+    if len(p) == 0:
+        return []
+    return [ p[0] ] + p[1]
+
+@pg.production('match_arm : pattern FAT_ARROW expression COMMA')
+def match_arm(p):
+    return MatchArm(p[0], p[2])
+
+@pg.production('pattern : expression')
+def pattern_expr(p):
+    return p[0]
+
+@pg.production('pattern : IDENTIFIER')
+def pattern_id(p):
+    if p[0].getstr() == '_':
+        return Identifier('_')
+    return Identifier(p[0].getstr())
 
 parser = pg.build()

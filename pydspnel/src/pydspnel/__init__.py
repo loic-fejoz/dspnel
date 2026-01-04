@@ -2,6 +2,8 @@ from pydspnel.lexer import lexer
 from pydspnel.parser import parser
 from pydspnel.interpreter import DSPnelInterpreter
 from pydspnel.typing_pass import applyTypingPass
+from pydspnel.pynumpy_backend import to_python
+from pydspnel.diagram_backend import to_mermaid
 
 def parse(src, state=None):
     ast = parser.parse(lexer.lex(src))

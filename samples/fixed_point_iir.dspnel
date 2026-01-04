@@ -1,0 +1,13 @@
+// Fixed-point implementation of a 1st order low-pass filter
+kernel low_pass_q15(
+    @rom
+    alpha: Q1.15 = 0.1,
+    in  x: <Q1.15>,
+    out y: <Q1.15>,
+) {
+    // The coefficients and state are in Q1.15 format
+    // A lower-level transformation might replace these with rounding/wrapping ops
+    y = alpha * x + (1.0 - alpha) * y';
+}
+
+let fp_filter = low_pass_q15(alpha: 0.2);

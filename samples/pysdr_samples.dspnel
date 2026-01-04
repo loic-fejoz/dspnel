@@ -1,0 +1,57 @@
+// Costas Loop for BPSK carrier recovery
+kernel costas_loop_bpsk(in x: <c32>, out y: <c32>, state phase: f32 = 0.0, state freq: f32 = 0.0, alpha: f32 = 0.01, beta: f32 = 0.0001) {
+    // VCO/NCO
+    let nco_out = cos(phase) - 1.0j * sin(phase);
+    let corrected = x * nco_out;
+    
+    // Error detector for BPSK
+    let error = corrected.re * corrected.im;
+    
+    // Loop Filter (PI Controller)
+    freq = freq + beta * error;
+    phase = phase + freq + alpha * error;
+    
+    // Wrap phase
+    if phase > 3.14159 { 
+        phase = phase - 6.28318; 
+    } else { 
+        if phase < -3.14159 { 
+            phase = phase + 6.28318; 
+        } 
+    }
+    
+    y = corrected;
+}
+
+// Mueller and Müller (M&M) Clock Recovery (Simplified)
+kernel mm_clock_recovery(in x: <f32>, out y: <f32>, state mu: f32 = 0.0, state last_sample: f32 = 0.0, state last_sign: f32 = 0.0, gain: f32 = 0.01) {
+    let sign = if x > 0.0 { 1.0 } else { -1.0 };
+    
+    // Error detector
+    let mm_error = x * last_sign - last_sample * sign;
+    
+    // Update timing estimate (fractional delay/interpolation placeholder)
+    mu = mu + gain * mm_error;
+    
+    last_sample = x;
+    last_sign = sign;
+    
+    y = x; // In a real implementation, this would be an interpolated sample
+}
+
+// Simple LMS Equalizer Tap (single step)
+kernel lms_tap(in x: <c32>, in d: <c32>, state w: c32 = 0.0, mu: f32 = 0.1, out y: <c32>) {
+    y = x * w;
+    let error = d - y;
+    w = w + mu * error * x.conj(); // Assuming .conj() method
+}
+
+// Pulse Shapers / Matched Filters are usually FIR
+// We can represent a single tap or a predefined filter call
+kernel rrc_pulse_shaper(in x: <c32>, out y: <c32>) {
+    // Ideally: y = fir(x, [0.1, 0.2, ...])
+    // For now, identity
+    y = x;
+}
+
+let rx_chain = costas_loop_bpsk() |> mm_clock_recovery() |> rrc_pulse_shaper();

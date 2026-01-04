@@ -179,8 +179,8 @@ class MethodCall(Expression):
     def asLisp(self):
         args = ' '.join([asLisp(arg) for arg  in self.args])
         receiver = self.receiver and self.receiver.asLisp() or '()'
-        named_args = self.named_args and (' (' + asLisp(self.named_args) + ')') or ''
-        return "(MethodCall {} {} ({}){})".format(self.method_name, receiver, args, named_args)
+        named_args = self.named_args and asLisp(self.named_args) or ''
+        return "(MethodCall {} {} ({}) ({}))".format(self.method_name, receiver, args, named_args)
     
 class ConditionalExpression(Expression):
     def __init__(self, condition, then_expr, else_expr=None, on_stream=False):
@@ -211,16 +211,18 @@ class Statement(BaseBox):
         super().__init__()
 
 class LetStatement(Statement):
-    def __init__(self, variable_name, type_expr=None, initialization=None):
+    def __init__(self, variable_name, type_expr=None, initialization=None, attributes=None):
         super().__init__()
         self.variable_name = variable_name
         self.type_expr = type_expr
         self.initialization = initialization
+        self.attributes = attributes or []
 
     def asLisp(self):
         type_expr = self.type_expr and self.type_expr.asLisp() or "()"
         init = self.initialization and self.initialization.asLisp() or "()"
-        return "(LetStatement {} {} {})".format(self.variable_name, type_expr, init)
+        attrs = ' '.join([a.asLisp() for a in self.attributes])
+        return "(LetStatement {} {} {} ({}))".format(self.variable_name, type_expr, init, attrs)
     
 class Assignment(Statement):
     def __init__(self, variable_name, expr, prefix=None):
@@ -279,18 +281,20 @@ class Quickcheck(ProtoFunction):
     prefix = 'Quickcheck'
   
 class Parameter(BaseBox):
-    def __init__(self, variable_name, type_expr=None, initialization=None, qualifier=None):
+    def __init__(self, variable_name, type_expr=None, initialization=None, qualifier=None, attributes=None):
         super().__init__()
         self.variable_name = variable_name
         self.type_expr = type_expr
         self.initialization = initialization
         self.qualifier = qualifier
+        self.attributes = attributes or []
 
     def asLisp(self):
         type_expr = self.type_expr and self.type_expr.asLisp() or '()'
         init = self.initialization and self.initialization.asLisp() or "()"
         qualif = self.qualifier or '()'
-        return "(Param {} {} {} {})".format(self.variable_name, type_expr, init, qualif)
+        attrs = ' '.join([a.asLisp() for a in self.attributes])
+        return "(Param {} {} {} {} ({}))".format(self.variable_name, type_expr, init, qualif, attrs)
     
 class Stream(BaseBox):
     def __init__(self, inner_type):
@@ -317,3 +321,52 @@ class ReturnStatement(Statement):
     def asLisp(self):
         expr = self.expr and self.expr.asLisp() or '()'
         return "(Return {})".format(expr)
+
+class FixedPointType(BaseBox):
+    def __init__(self, signed, int_bits, frac_bits):
+        super().__init__()
+        self.signed = signed
+        self.int_bits = int_bits
+        self.frac_bits = frac_bits
+
+    def asLisp(self):
+        return "(FixedPointType {} {} {})".format(self.signed, self.int_bits, self.frac_bits)
+
+class BufferType(BaseBox):
+    def __init__(self, kind, inner_type, size):
+        super().__init__()
+        self.kind = kind # 'buffer', 'circular_buffer', 'round_robin'
+        self.inner_type = inner_type
+        self.size = size
+
+    def asLisp(self):
+        return "(BufferType {} {} {})".format(self.kind, self.inner_type.asLisp(), self.size.asLisp())
+
+class Attribute(BaseBox):
+    def __init__(self, name, args=None):
+        super().__init__()
+        self.name = name
+        self.args = args or []
+
+    def asLisp(self):
+        args = ' '.join([asLisp(a) for a in self.args])
+        return "(Attribute {} ({}))".format(self.name, args)
+
+class MatchArm(BaseBox):
+    def __init__(self, pattern, expr):
+        super().__init__()
+        self.pattern = pattern
+        self.expr = expr
+
+    def asLisp(self):
+        return "(Arm {} {})".format(self.pattern.asLisp(), self.expr.asLisp())
+
+class MatchExpression(Expression):
+    def __init__(self, expression, arms):
+        super().__init__()
+        self.expression = expression
+        self.arms = arms
+
+    def asLisp(self):
+        arms = ' '.join([arm.asLisp() for arm in self.arms])
+        return "(Match {} ({}))".format(self.expression.asLisp(), arms)
