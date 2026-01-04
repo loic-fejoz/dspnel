@@ -48,7 +48,6 @@ lg.add('ENSURES', r'ensures(?![_$a-zA-Z0-9])')
 lg.add('REQUIRES', r'requires(?![_$a-zA-Z0-9])')
 lg.add('ELSE', r'else(?![_$a-zA-Z0-9])')
 lg.add('LET', r'let(?![_$a-zA-Z0-9])')
-lg.add('QUICKCHECK', r'quickcheck(?![_$a-zA-Z0-9])')
 lg.add('FUNCTION', r'fn(?![_$a-zA-Z0-9])')
 
 lg.add('RANGE', r'\.\.')

@@ -257,28 +257,27 @@ class Block(BaseBox):
         return "(Block {})".format(stmts)
     
 class ProtoFunction(Statement):
-    def __init__(self, name, params, block, assumptions=None, guarantees=None):
+    def __init__(self, name, params, block, assumptions=None, guarantees=None, attributes=None):
         self.name = name
         self.params = params
         self.block = block
         self.assumptions = assumptions
         self.guarantees = guarantees
+        self.attributes = attributes or []
 
     def asLisp(self):
         params = ' '.join([param.asLisp() for param  in self.params])
         block = self.block.asLisp()
         assumptions = ' '.join([e.asLisp() for e in self.assumptions])
         guarantees = ' '.join([e.asLisp() for e  in self.guarantees])
-        return "({} {} ({}) {} ({}) ({}))".format(self.prefix, self.name, params, block, assumptions, guarantees)
+        attrs = ' '.join([a.asLisp() for a in self.attributes])
+        return "({} {} ({}) {} ({}) ({}) ({}))".format(self.prefix, self.name, params, block, assumptions, guarantees, attrs)
     
 class Kernel(ProtoFunction):
     prefix = 'Kernel'
 
 class Function(ProtoFunction):
     prefix = 'Fn'
-
-class Quickcheck(ProtoFunction):
-    prefix = 'Quickcheck'
   
 class Parameter(BaseBox):
     def __init__(self, variable_name, type_expr=None, initialization=None, qualifier=None, attributes=None):

@@ -12,7 +12,7 @@ pg = ParserGenerator(
      'KERNEL', 'STATE', 'LT', 'GT', 'GEQ', 'LEQ', 'FUNCTION', 'RETURN',
      'REQUIRES', 'ENSURES', 'MUL_ASSIGN', 'SUB_ASSIGN', 'ADD_ASSIGN',
      'DEQUALS', 'DIFFERENT', 'IMPLY', 'XOR', 'OR', 'AND', 'NOT', 'MODULO',
-     'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'QUICKCHECK', 'PIPE', 'PIPE_RIGHT', 'AMPERSAND',
+     'COMMENT', 'DOCCOMMENT', 'PRIME', 'POW', 'PIPE', 'PIPE_RIGHT', 'AMPERSAND',
      'BTLEFT', 'BTRIGHT', 'BITNEG', 'AT', 'FIXED_POINT_TYPE', 'MATCH', 'FAT_ARROW'
     ],
     # A list of precedence rules with ascending precedence, to
@@ -110,10 +110,6 @@ def fn_qualif(p):
 def kernel_qualif(p):
     return Kernel
 
-@pg.production('protofunction : QUICKCHECK')
-def quickcheck_qualif(p):
-    return Quickcheck
-
 @pg.production('assumptions : REQUIRES expression_list')
 @pg.production('assumptions : ')
 def assumptions(p):
@@ -128,10 +124,10 @@ def guarantees(p):
         return []
     return p[1]
 
-@pg.production('stmt : optional_doccomment protofunction IDENTIFIER OPEN_PARENS parameters_list CLOSE_PARENS assumptions guarantees block')
+@pg.production('stmt : optional_attributes optional_doccomment protofunction IDENTIFIER OPEN_PARENS parameters_list CLOSE_PARENS assumptions guarantees block')
 def statement_kernel(p):
-    protofunc = p[1](p[2].getstr(), p[4], p[8], p[6], p[7])
-    protofunc.doc = p[0]
+    protofunc = p[2](p[3].getstr(), p[5], p[9], p[7], p[8], p[0])
+    protofunc.doc = p[1]
     return protofunc
 
 @pg.production('parameters_list : optional_doccomment parameter COMMA optional_comment parameters_list')

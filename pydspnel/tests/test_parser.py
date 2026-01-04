@@ -237,13 +237,13 @@ def test_statement():
 
     ast = parse('kernel A(){}')
     ast = ast.asLisp()
-    assert ast == '(Kernel A () (Block ) () ())'
+    assert ast == '(Kernel A () (Block ) () () ())'
 
     ast = parse("""kernel A(
                 a: u32,
     ){}""")
     ast = ast.asLisp()
-    assert ast == '(Kernel A ((Param a u32 () () ())) (Block ) () ())'
+    assert ast == '(Kernel A ((Param a u32 () () ())) (Block ) () () ())'
 
     ast = parse("""kernel A(
                 a: u32,
@@ -253,14 +253,14 @@ def test_statement():
                 out e: i16,
     ){}""")
     ast = ast.asLisp()
-    assert ast == '(Kernel A ((Param a u32 () () ()) (Param b f64 0.0 () ()) (Param c u32 0 state ()) (Param d f32 () in ()) (Param e i16 () out ())) (Block ) () ())'
+    assert ast == '(Kernel A ((Param a u32 () () ()) (Param b f64 0.0 () ()) (Param c u32 0 state ()) (Param d f32 () in ()) (Param e i16 () out ())) (Block ) () () ())'
 
     ast = parse("""kernel A(
                 in d: <f32>,
                 out e: <i16>,
     ){}""")
     ast = ast.asLisp()
-    assert ast == '(Kernel A ((Param d (Stream f32) () in ()) (Param e (Stream i16) () out ())) (Block ) () ())'
+    assert ast == '(Kernel A ((Param d (Stream f32) () in ()) (Param e (Stream i16) () out ())) (Block ) () () ())'
 
     ast = parse("""
     fn A(
@@ -269,7 +269,7 @@ def test_statement():
         return a;
     }""")
     ast = ast.asLisp()
-    assert ast == '(Fn A ((Param a u32 () () ())) (Block (Return a)) () ())'
+    assert ast == '(Fn A ((Param a u32 () () ())) (Block (Return a)) () () ())'
 
     ast = parse("""
     fn A(
@@ -279,7 +279,7 @@ def test_statement():
         return a;
     }""")
     ast = ast.asLisp()
-    assert ast == '(Fn A ((Param a u32 () () ())) (Block (Return a)) () ())'
+    assert ast == '(Fn A ((Param a u32 () () ())) (Block (Return a)) () () ())'
 
     ast = parse("""
     fn A(
@@ -291,7 +291,7 @@ def test_statement():
         return a;
     }""")
     ast = ast.asLisp()
-    assert ast == '(Fn A ((Param a u32 () () ())) (Block (Return a)) ((GreaterThan a 10)) ())'
+    assert ast == '(Fn A ((Param a u32 () () ())) (Block (Return a)) ((GreaterThan a 10)) () ())'
 
     ast = parse("""
     fn A(
@@ -304,13 +304,15 @@ def test_statement():
         return a;
     }""")
     ast = ast.asLisp()
-    assert ast == '(Fn A ((Param a u32 () () ())) (Block (Return a)) ((GreaterThan a 10) (LessEquals a 20)) ())'  
+    assert ast == '(Fn A ((Param a u32 () () ())) (Block (Return a)) ((GreaterThan a 10) (LessEquals a 20)) () ())'
 
     ast = parse("""
-quickcheck a_is_always_positive(in a: <u32>,) {
+@quickcheck kernel a_is_always_positive(in a: <u32>,) {
     return a() >= 0;
 }
     """)
+    ast = ast.asLisp()
+    assert ast == '(Kernel a_is_always_positive ((Param a (Stream u32) () in ())) (Block (Return (GreaterEquals (MethodCall a () () ()) 0))) () () ((Attribute quickcheck ())))'
 
 
 def test_typeexpr():
@@ -385,14 +387,14 @@ def test_comment():
                 a: u32, // some comments
     ){}""")
     ast = ast.asLisp()
-    assert ast == '(Kernel A ((Param a u32 () () ())) (Block ) () ())'
+    assert ast == '(Kernel A ((Param a u32 () () ())) (Block ) () () ())'
 
     ast = parse("""kernel A(
                 /// some doc comments
                 a: u32, // some comments
     ){}""")
     lsp = ast.asLisp()
-    assert lsp == '(Kernel A ((Param a u32 () () ())) (Block ) () ())'
+    assert lsp == '(Kernel A ((Param a u32 () () ())) (Block ) () () ())'
     assert ast.params[0].doc.asLisp() == "(Comment '/// some doc comments')"
 
     ast = parse("""
@@ -402,6 +404,6 @@ def test_comment():
                 a: u32, // some comments
     ){}""")
     lsp = ast.asLisp()
-    assert lsp == '(Kernel A ((Param a u32 () () ())) (Block ) () ())'
+    assert lsp == '(Kernel A ((Param a u32 () () ())) (Block ) () () ())'
     assert ast.doc.asLisp() == '(Comment "/// kernel\'s doc")'
     assert ast.params[0].doc.asLisp() == "(Comment '/// some doc comments')"

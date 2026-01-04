@@ -177,8 +177,13 @@ class PrettyPrinter:
             return [ast.value]
         elif t == Number:
             return [ast.value]
-        elif t in [Kernel, Function, Quickcheck]:
-            d = {Kernel: 'kernel ', Function: 'fn ', Quickcheck: 'quickcheck '}
+        elif t in [Kernel, Function]:
+            d = {Kernel: 'kernel ', Function: 'fn '}
+            attrs = ''.join(self.as_string(a) for a in ast.attributes)
+            if ast.attributes:
+                attrs += '\n'
+            else:
+                attrs = ''
             if ast.assumptions or ast.guarantees:
                 end_param = concat([')', '\n'])
             else:
@@ -192,6 +197,7 @@ class PrettyPrinter:
             else:
                 guarantees = ''
             return concat(['\n',
+                attrs,
                 d[t], ast.name, bracket("(\n",
                     self.pp_parameters(ast.params),
                 end_param),
@@ -264,6 +270,10 @@ class PrettyPrinter:
             return self.pp_list(ast)
         elif t == Matrix:
             return self.pp_matrix(ast, last_nl=False)
+        elif t == Attribute:
+            if ast.args:
+                return concat(['@', ast.name, '(', sep(', ', [self.pp(a) for a in ast.args]), ')'])
+            return concat(['@', ast.name])
         else:
             raise BaseException("Unknown type {} '{}'".format(repr(t), asLisp(ast)))
         
@@ -310,21 +320,27 @@ class PrettyPrinter:
             pp_init = self.pp(ast.initialization)
             pp_init = ''.join(pp_init)
             semicolon = ';'
-        row = [ 'let ',
+        attrs = ''.join(self.as_string(a) for a in ast.attributes)
+        if ast.attributes:
+            attrs += ' '
+        else:
+            attrs = ''
+        row = [ attrs,
+                'let ',
                 ast.variable_name,
-                ''.join(self.pp(ast.type_expr)),
+                self.as_string(ast.type_expr),
                 pp_init]
-        if row[2]:
-            row[1] += ': '
         if row[3]:
-            row[3] = ' = ' + row[3]
+            row[2] += ': '
+        if row[4]:
+            row[4] = ' = ' + row[4]
         if is_multineline_matrix:
-            row[3] = ' ='
+            row[4] = ' ='
         if row[-1] == '':
             if row[-2] == '':
-                row[2] += semicolon
-            else:
                 row[3] += semicolon
+            else:
+                row[4] += semicolon
         else:
             row[-1] += semicolon
         if is_multineline_matrix:
@@ -364,14 +380,17 @@ class PrettyPrinter:
         return output
 
     def pp_param(self, param):
-        row = [
-            param.qualifier,
-            param.variable_name,
-            ''.join(self.pp(param.type_expr)),
-            ''.join(self.pp(param.initialization))]
-        if row[0] is None:
-            row[0] = ''
+        attrs = ''.join(self.as_string(a) for a in param.attributes)
+        if param.attributes:
+            attrs += ' '
         else:
+            attrs = ''
+        row = [
+            attrs + (param.qualifier or ''),
+            param.variable_name,
+            self.as_string(param.type_expr),
+            self.as_string(param.initialization)]
+        if row[0]:
             row[0] += ' '
         if row[2]:
             row[1] += ': '
